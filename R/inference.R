@@ -64,7 +64,7 @@ gfiSummary <- function(fidsamples, conf = 0.95){
 #' )
 #' group <- gl(3, 4)
 #' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
-#' fcdf <- gfiCDF(~ group1 - group2, fidsamples)
+#' fcdf <- gfiCDF(~ exp(group1) / exp(group2), fidsamples)
 #' fcdf(0)
 #' plot(fcdf)
 gfiCDF <- function(parameter, fidsamples){
@@ -93,6 +93,7 @@ gfiCDF <- function(parameter, fidsamples){
 #' )
 #' group <- gl(3, 4)
 #' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+#' expit <- function(x) exp(x) / (1+exp(x))
 #' gfiConfInt(~ expit(group1) - expit(group2), fidsamples)
 gfiConfInt <- function(parameter, fidsamples, conf = 0.95){
   fcdf <- gfiCDF(parameter, fidsamples)
@@ -120,7 +121,7 @@ gfiConfInt <- function(parameter, fidsamples, conf = 0.95){
 #' )
 #' group <- gl(3, 4)
 #' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
-#' gfiQuantile(~ group1 * group2, fidsamples, c(25, 50, 75)/100)
+#' gfiQuantile(~ group2 - group1, fidsamples, c(25, 50, 75)/100)
 gfiQuantile <- function(parameter, fidsamples, probs){
   fcdf <- gfiCDF(parameter, fidsamples)
   quantile.ewcdf(fcdf, probs = probs)

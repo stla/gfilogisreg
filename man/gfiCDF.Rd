@@ -26,7 +26,7 @@ y <- c(
 )
 group <- gl(3, 4)
 fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
-fcdf <- gfiCDF(~ group1 - group2, fidsamples)
+fcdf <- gfiCDF(~ exp(group1) / exp(group2), fidsamples)
 fcdf(0)
 plot(fcdf)
 }

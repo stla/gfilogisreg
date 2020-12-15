@@ -31,4 +31,6 @@ y <- c(
 )
 group <- gl(3, 4)
 gf <- gfilogisreg(y ~ 0 + group, N = 1000)
+gfiSummary(gf)
+glm(y ~ 0 + group)
 }

@@ -27,5 +27,6 @@ y <- c(
 )
 group <- gl(3, 4)
 fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+expit <- function(x) exp(x) / (1+exp(x))
 gfiConfInt(~ expit(group1) - expit(group2), fidsamples)
 }
