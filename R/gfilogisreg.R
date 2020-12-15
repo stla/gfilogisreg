@@ -1,13 +1,15 @@
-#' Title
+#' Generalized fiducial inference for logistic regression
 #'
-#' @description x
+#' @description Simulates the fiducial distribution of a logistic regression
+#'   model.
 #'
-#' @param formula x
-#' @param data x
-#' @param N x
-#' @param thresh x
+#' @param formula formula describing the model
+#' @param data dataframe containing the variables in the model
+#' @param N number of fiducial simulations
+#' @param thresh threshold criterion for the alteration; expert usage only
 #'
-#' @return x
+#' @return A list with two fields: \code{Beta}, the fiducial simulations of
+#'   the parameters, and \code{Weights}, their weight.
 #' @export
 #'
 #' @importFrom lazyeval f_eval_lhs
@@ -15,7 +17,13 @@
 #' @importFrom EigenR Eigen_rank
 #' @importFrom stats model.matrix rlogis
 #'
-#' @examples x
+#' @examples y <- c(
+#'   0, 0, 0, 1,
+#'   0, 0, 1, 1,
+#'   0, 1, 1, 1
+#' )
+#' group <- gl(3, 4)
+#' gf <- gfilogisreg(y ~ 0 + group, N = 1000)
 gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))
