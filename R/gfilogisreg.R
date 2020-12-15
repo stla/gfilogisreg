@@ -25,7 +25,7 @@
 #' group <- gl(3, 4)
 #' gf <- gfilogisreg(y ~ 0 + group, N = 1000)
 #' gfiSummary(gf)
-#' glm(y ~ 0 + group)
+#' glm(y ~ 0 + group, family = binomial())
 gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))
