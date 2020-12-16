@@ -14,7 +14,7 @@
 #'
 #' @importFrom lazyeval f_eval_lhs
 #' @importFrom rcdd scdd q2d d2q makeH addHin makeV
-#' @importFrom EigenR Eigen_rank
+#' @importFrom EigenR Eigen_rank Eigen_range
 #' @importFrom stats model.matrix rlogis
 #'
 #' @examples y <- c(
@@ -33,7 +33,10 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
   X <- model.matrix(formula, data = data)
   n <- length(y)
   p <- ncol(X)
+  stopifnot(p >= 2)
+  idx <- 3L:(2L+p)
   Beta <- matrix(NA_real_, nrow = N, ncol = p)
+  colnames(Beta) <- paste0("beta", 1L:p)
   H <- vector("list", N)
   weight <- matrix(1, nrow = n, ncol = N)
   ESS <- rep(N, n)
@@ -77,7 +80,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
     Xt <- XK[t, ]
     for(i in 1L:N){
       V <- q2d(scdd(H[[i]])[["output"]])
-      points <- V[isone(V[, 2L]), c(3L,4L), drop = FALSE]
+      points <- V[isone(V[, 2L]), idx, drop = FALSE]
       if(yK[t] == 0L){
         MIN <- min(points %*% Xt)
         atilde <- rtlogis2(MIN)
@@ -118,8 +121,8 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
             b <- QQt %*% At[, i]
             B <- Pt %*% At[, i]
             BTILDES <- rcd(ncopies-1L, P, b, B)
-            points <- VT[isone(VT[, 2L]), c(3L,4L), drop = FALSE]
-            rays <- VT[!isone(VT[, 2L]), c(3L,4L), drop = FALSE]
+            points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
+            rays <- VT[!isone(VT[, 2L]), idx, drop = FALSE]
             for(j in 2L:ncopies){
               VT_new <- matrix(NA_real_, nrow = nrow(points), ncol = p)
               Btilde <- BTILDES[j-1L, ]
@@ -149,7 +152,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
     RAYS <- 0L
     VT <- q2d(scdd(H[[i]])[["output"]])
     if(any(!isone(VT[, 2L]))) RAYS <- RAYS + 1L
-    points <- VT[isone(VT[, 2L]), c(3L,4L), drop = FALSE]
+    points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
     for(j in 1L:p){
       if(sample.int(2L, 1L) == 1L)
         Beta[i, j] <- min(points[, j])
@@ -164,7 +167,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
     #   Beta[i, j] <- sample(points[, j], 1L)
     # }
   }
-  out <- list(Beta = Beta, Weights = WTnorm)
+  out <- list(Beta = as.data.frame(Beta), Weights = WTnorm)
   attr(out, "rays") <- RAYS
   attr(out, "ESS") <- ESS
   out
