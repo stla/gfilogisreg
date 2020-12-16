@@ -36,7 +36,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
   stopifnot(p >= 2)
   idx <- 3L:(2L+p)
   Beta <- matrix(NA_real_, nrow = N, ncol = p)
-  colnames(Beta) <- paste0("beta", 1L:p)
+  colnames(Beta) <- colnames(X)
   H <- vector("list", N)
   weight <- matrix(1, nrow = n, ncol = N)
   ESS <- rep(N, n)

@@ -21,12 +21,11 @@ Fiducial cumulative distribution function of a parameter of
 \examples{
 y <- c(
   0, 0, 0, 1,
-  0, 0, 1, 1,
   0, 1, 1, 1
 )
-group <- gl(3, 4)
+group <- gl(2, 4)
 fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
 fcdf <- gfiCDF(~ exp(group1) / exp(group2), fidsamples)
-fcdf(0)
+fcdf(1)
 plot(fcdf)
 }
