@@ -26,13 +26,9 @@ inference <- function(fidsamples, param, alpha = 0.05){
 #'   intervals.
 #' @export
 #'
-#' @examples y <- c(
-#'   0, 0, 0, 1,
-#'   0, 0, 1, 1,
-#'   0, 1, 1, 1
-#' )
-#' group <- gl(3, 4)
-#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+#' @examples y <- c(0, 0, 1, 1, 1)
+#' x <- c(-2, -1, 0, 1, 2)
+#' fidsamples <- gfilogisreg(y ~ x, N = 1000)
 #' gfiSummary(fidsamples)
 gfiSummary <- function(fidsamples, conf = 0.95){
   sims <- fidsamples[["Beta"]]
@@ -62,7 +58,7 @@ gfiSummary <- function(fidsamples, conf = 0.95){
 #'   0, 1, 1, 1
 #' )
 #' group <- gl(2, 4)
-#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 500)
 #' fcdf <- gfiCDF(~ exp(group1) / exp(group2), fidsamples)
 #' fcdf(1)
 #' plot(fcdf)
@@ -90,7 +86,7 @@ gfiCDF <- function(parameter, fidsamples){
 #'   0, 1, 1, 1
 #' )
 #' group <- gl(2, 4)
-#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 500)
 #' expit <- function(x) exp(x) / (1+exp(x))
 #' gfiConfInt(~ expit(group1) - expit(group2), fidsamples)
 gfiConfInt <- function(parameter, fidsamples, conf = 0.95){
@@ -117,7 +113,7 @@ gfiConfInt <- function(parameter, fidsamples, conf = 0.95){
 #'   0, 1, 1, 1
 #' )
 #' group <- gl(2, 4)
-#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+#' fidsamples <- gfilogisreg(y ~ 0 + group, N = 500)
 #' gfiQuantile(~ group2 - group1, fidsamples, c(25, 50, 75)/100)
 gfiQuantile <- function(parameter, fidsamples, probs){
   fcdf <- gfiCDF(parameter, fidsamples)

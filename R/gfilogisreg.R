@@ -17,15 +17,11 @@
 #' @importFrom EigenR Eigen_rank Eigen_range
 #' @importFrom stats model.matrix rlogis rmultinom
 #'
-#' @examples y <- c(
-#'   0, 0, 0, 1,
-#'   0, 0, 1, 1,
-#'   0, 1, 1, 1
-#' )
-#' group <- gl(3, 4)
-#' gf <- gfilogisreg(y ~ 0 + group, N = 1000)
+#' @examples y <- c(0, 0, 1, 1, 1)
+#' x <- c(-2, -1, 0, 1, 2)
+#' gf <- gfilogisreg(y ~ x, N = 1000)
 #' gfiSummary(gf)
-#' glm(y ~ 0 + group, family = binomial())
+#' glm(y ~ x, family = binomial())
 gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))

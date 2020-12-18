@@ -19,12 +19,8 @@ A matrix with summary statistics: means, medians, and confidence
 Summary of the fiducial samples.
 }
 \examples{
-y <- c(
-  0, 0, 0, 1,
-  0, 0, 1, 1,
-  0, 1, 1, 1
-)
-group <- gl(3, 4)
-fidsamples <- gfilogisreg(y ~ 0 + group, N = 1000)
+y <- c(0, 0, 1, 1, 1)
+x <- c(-2, -1, 0, 1, 2)
+fidsamples <- gfilogisreg(y ~ x, N = 1000)
 gfiSummary(fidsamples)
 }
