@@ -15,7 +15,7 @@
 #' @importFrom lazyeval f_eval_lhs
 #' @importFrom rcdd scdd q2d d2q makeH addHin makeV
 #' @importFrom EigenR Eigen_rank Eigen_range
-#' @importFrom stats model.matrix rlogis
+#' @importFrom stats model.matrix rlogis rmultinom
 #'
 #' @examples y <- c(
 #'   0, 0, 0, 1,

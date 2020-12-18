@@ -33,9 +33,10 @@ expit <- function(x) exp(x) / (1+exp(x))
 #' @importFrom stats dlogis
 #' @noRd
 rcd <- function(n, P, b, B){
+  d <- length(B)
   logit(ur(
     unr = vnrou.new(
-      dim = length(B),
+      dim = d,
       pdf = function(u) prod(dlogis(c(P %*% logit(u) + b))) * prod(dlogit(u)),
       center = expit(c(B)),
       ll = rep(0, d), ur = rep(1, d)
