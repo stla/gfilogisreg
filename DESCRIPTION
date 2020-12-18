@@ -1,13 +1,12 @@
 Package: gfilogisreg
-Title: What the Package Does (One Line, Title Case)
+Title: Generalized Fiducial Inference for Logistic Regression Models
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Stéphane",
+           family = "Laurent",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           email = "laurent_step@outlook.fr")
+Description: Fiducial framework for the logistic regression model. The fiducial distribution of the parameters of the logistic regression is simulated, allowing to perform statistical inference on any parameter of interest.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
