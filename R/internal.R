@@ -25,16 +25,21 @@ rtlogis2 <- function(b){
   out
 }
 
+logit <- function(u) log(u/(1-u))
+dlogit <- function(u) 1/(u*(1-u))
+expit <- function(x) exp(x) / (1+exp(x))
+
 #' @importFrom Runuran ur vnrou.new
 #' @importFrom stats dlogis
 #' @noRd
 rcd <- function(n, P, b, B){
-  ur(
+  logit(ur(
     unr = vnrou.new(
       dim = length(B),
-      pdf = function(x) prod(dlogis(c(P %*% x + b))),
-      center = c(B)
+      pdf = function(u) prod(dlogis(c(P %*% logit(u) + b))) * prod(dlogit(u)),
+      center = expit(c(B)),
+      ll = rep(0, d), ur = rep(1, d)
     ),
     n = n
-  )
+  ))
 }
