@@ -21,6 +21,6 @@ Summary of the fiducial samples.
 \examples{
 y <- c(0, 0, 1, 1, 1)
 x <- c(-2, -1, 0, 1, 2)
-fidsamples <- gfilogisreg(y ~ x, N = 500)
+fidsamples <- gfilogisreg(y ~ x, N = 400) # (N=400 is not serious)
 gfiSummary(fidsamples)
 }

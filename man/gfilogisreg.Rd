@@ -26,7 +26,7 @@ Simulates the fiducial distribution of a logistic regression
 \examples{
 y <- c(0, 0, 1, 1, 1)
 x <- c(-2, -1, 0, 1, 2)
-gf <- gfilogisreg(y ~ x, N = 500)
+gf <- gfilogisreg(y ~ x, N = 400) # (N=400 is not serious)
 gfiSummary(gf)
 glm(y ~ x, family = binomial())
 }

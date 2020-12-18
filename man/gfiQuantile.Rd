@@ -26,6 +26,6 @@ y <- c(
   0, 1, 1, 1
 )
 group <- gl(2, 4)
-fidsamples <- gfilogisreg(y ~ 0 + group, N = 500)
+fidsamples <- gfilogisreg(y ~ 0 + group, N = 500) # (N=500 is not serious)
 gfiQuantile(~ group2 - group1, fidsamples, c(25, 50, 75)/100)
 }
