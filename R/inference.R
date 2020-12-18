@@ -28,7 +28,7 @@ inference <- function(fidsamples, param, alpha = 0.05){
 #'
 #' @examples y <- c(0, 0, 1, 1, 1)
 #' x <- c(-2, -1, 0, 1, 2)
-#' fidsamples <- gfilogisreg(y ~ x, N = 1000)
+#' fidsamples <- gfilogisreg(y ~ x, N = 500)
 #' gfiSummary(fidsamples)
 gfiSummary <- function(fidsamples, conf = 0.95){
   sims <- fidsamples[["Beta"]]
