@@ -4,7 +4,7 @@
 \alias{gfilogisreg}
 \title{Generalized fiducial inference for logistic regression}
 \usage{
-gfilogisreg(formula, data = NULL, N, thresh = N/2)
+gfilogisreg(formula, data = NULL, N, thresh = N/2, progress = TRUE)
 }
 \arguments{
 \item{formula}{formula describing the model}
@@ -14,6 +14,9 @@ gfilogisreg(formula, data = NULL, N, thresh = N/2)
 \item{N}{number of fiducial simulations}
 
 \item{thresh}{threshold criterion for the alteration; expert usage only}
+
+\item{progress}{whether to print messages showing the progress of the
+algorithm}
 }
 \value{
 A list with two fields: \code{Beta}, the fiducial simulations of

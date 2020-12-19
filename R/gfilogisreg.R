@@ -7,6 +7,8 @@
 #' @param data dataframe containing the variables in the model
 #' @param N number of fiducial simulations
 #' @param thresh threshold criterion for the alteration; expert usage only
+#' @param progress whether to print messages showing the progress of the
+#'   algorithm
 #'
 #' @return A list with two fields: \code{Beta}, the fiducial simulations of
 #'   the parameters, and \code{Weights}, their weight.
@@ -22,7 +24,7 @@
 #' gf <- gfilogisreg(y ~ x, N = 400) # (N=400 is not serious)
 #' gfiSummary(gf)
 #' glm(y ~ x, family = binomial())
-gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
+gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))
   signs <- -2*y + 1
@@ -71,7 +73,9 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
   }
   # t from p+1 to n ####
   for(t in 1L:(n-p)){
-    cat("t:", p+t, "\n")
+    if(progress){
+      message(sprintf("%d/%d", p+t, n))
+    }
     At <- rbind(At, NA_real_)
     Xt <- XK[t, ]
     for(i in 1L:N){
@@ -97,7 +101,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
     WTnorm <- WT / sum(WT)
     ESS[p+t] <- 1 / sum(WTnorm*WTnorm)
     if(ESS[p+t] < thresh || t == n-p){ # ALTERATION ####
-      cat("alteration\n")
+      if(progress) message("alteration in progress...")
       Nsons <- rmultinom(1L, N, WT)[, 1L]
       counter <- 1L
       At_new <- matrix(NA_real_, nrow = p+t, ncol = 0L)
@@ -141,7 +145,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2){
       H <- HH
       At <- At_new
       if(t < n-p) weight <- matrix(1, nrow = n, ncol = N)
-      cat("altered\n")
+      if(progress) message("done")
     }
   }
   for(i in 1L:N){

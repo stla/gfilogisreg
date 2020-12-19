@@ -61,8 +61,9 @@ dat <- data.frame(
 
 Let's go: 
 
-```{r logisreg}
+```{r logisreg, message=FALSE}
 library(gfilogisreg)
+set.seed(666L)
 fidsamples <- gfilogisreg(y ~ x, data = dat, N = 500L)
 ```
 
