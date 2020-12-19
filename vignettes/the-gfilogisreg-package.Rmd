@@ -61,13 +61,13 @@ dat <- data.frame(
 
 Let's go: 
 
-```{r logisreg, message=FALSE}
+```{r logisreg, message=FALSE, results='hide'}
 library(gfilogisreg)
 set.seed(666L)
 fidsamples <- gfilogisreg(y ~ x, data = dat, N = 500L)
 ```
 
-Here are the fiducial estimates and $95%$-confidence intervals of the 
+Here are the fiducial estimates and $95\%$-confidence intervals of the 
 parameters $\beta_0$ and $\beta_1$:
 
 ```{r gfisummary}
