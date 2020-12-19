@@ -18,3 +18,7 @@ Imports:
   spatstat,
   EigenR,
   stats
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
