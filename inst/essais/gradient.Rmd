@@ -1,0 +1,144 @@
+---
+title: "gradient"
+author: "Stéphane Laurent"
+date: "20/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+$$
+f(u,v) = \prod (f_1 \otimes f_1 \otimes f_1)
+\left(P\begin{pmatrix}logit(u)\\ logit(v)\end{pmatrix} + b\right) \times
+logit'(u)\cdot logit'(v).
+$$
+$$
+\log f(u,v) = \log f_1\bigl(p_{11}logit(u) + p_{12}logit(v) + b_1\bigr) + \\
+\log f_1\bigl(p_{21}logit(u) + p_{22}logit(v) + b_2\bigr) + \\
+\log f_1\bigl(p_{31}logit(u) + p_{32}logit(v) + b_3\bigr) + \\
+\log\bigl(logit'(u)\bigr) + \log\bigl(logit'(v)\bigr).
+$$
+$$
+\log f_1(x) = x - 2\log(1 + e^x).
+$$
+$$
+{\bigl(\log f_1\bigr)}'(x) = 1 - \frac{2 e^x}{1+e^x}.
+$$
+$$
+logit'(u) = \frac{1}{u(1-u)}.
+$$
+$$
+\frac{\partial}{\partial u} \log f(u,v) = 
+p_{11}logit'(u) 
+{\bigl(\log f_1\bigr)}'\bigl(p_{11}logit(u) + p_{12}logit(v) + b_1\bigr) 
++ \cdots + \\ \frac{2u - 1}{u(1-u)}.
+$$
+
+```{r}
+expit <- function(x) 1 / (1+exp(-x))
+logit <- function(u) log(u/(1-u))
+dlogit <- function(u) 1/(u*(1-u))
+ldlogit <- function(u) -log(u) - log1p(-u)
+ldlogis <- function(x) x - 2*log1p(exp(x))
+dldlogis <- function(x) 1 - 2*expit(x)
+```
+
+```{r}
+P <- structure(c(-0.816496580927726, -0.408248290463863, 0, 0.408248290463863, 
+-0.182574185835055, -0.365148371670111, -0.547722557505166, -0.730296743340222
+), .Dim = c(4L, 2L))
+b <- c(-0.497055737731043, 1.5763637399835, -1.66156026677388, 
+0.582252264521417)
+f <- function(uv){
+  vecx <- P %*% logit(uv) + b
+  prod(dlogis(vecx)) * prod(dlogit(uv))
+}
+minus_logf <- function(uv){
+  vecx <- P %*% logit(uv) + b
+  -sum(ldlogis(vecx)) - sum(ldlogit(uv))
+}
+gr_i <- function(uv, i){
+  vecx <- P %*% logit(uv) + b
+  -dlogit(uv[i]) * sum(P[, i] * dldlogis(vecx)) + (1-2*uv[i])/(uv[i]*(1-uv[i]))
+}
+gr <- function(uv){
+  c(gr_i(uv, 1L), gr_i(uv, 2L))
+}
+```
+
+```{r}
+minus_logf(c(0.5,0.5))
+minus_logf(c(1e-16, 1e-16))
+minus_logf(c(1-1e-16, 1-1e-16))
+```
+
+```{r}
+B <- c(0.456112464221194, 0.206538736468621)
+opt <- optim(
+  par = expit(B), fn = minus_logf,  gr = gr,
+  method = "L-BFGS-B", lower = c(1e-16, 1e-16), upper = c(1-1e-16, 1-1e-16)
+)
+mu <- opt[["par"]]
+umax <- sqrt(exp(-minus_logf(mu))) 
+```
+
+```{r}
+vmin <- c(NA_real_, NA_real_)
+#
+init <- expit(B)
+init[1] <- mu[1]/2
+opt <- optim(
+  par = init, 
+  fn = function(uv) sqrt(exp(-minus_logf(uv))) * (uv[1] - mu[1]),  
+  #gr = function(uv) -gr(uv) + c(1/uv[1], 0),
+  method = "L-BFGS-B", 
+  lower = c(1e-16, 1e-16), 
+  upper = c(mu[1], 1-1e-16)
+)
+vmin[1] <- opt[["value"]]
+#
+init <- expit(B)
+init[2] <- mu[2]/2
+opt <- optim(
+  par = init, 
+  fn = function(uv) sqrt(exp(-minus_logf(uv))) * (uv[2] - mu[2]),  
+  #gr = function(uv) -gr(uv) + c(1/uv[1], 0),
+  method = "L-BFGS-B", 
+  lower = c(1e-16, 1e-16), 
+  upper = c(1-1e-16, mu[2])
+)
+vmin[2] <- opt[["value"]]
+```
+
+
+```{r}
+vmax <- c(NA_real_, NA_real_)
+#
+init <- expit(B)
+init[1] <- (mu[1]+1)/2
+opt <- optim(
+  par = init, 
+  fn = function(uv) -f(uv) * (uv[1] - mu[1])^2,  
+  #gr = function(uv) -gr(uv) + c(1/uv[1], 0),
+  method = "L-BFGS-B", 
+  lower = c(mu[1], 1e-16), 
+  upper = c(1-1e-16, 1-1e-16)
+) 
+vmax[1] <- sqrt(opt[["value"]])
+#
+init <- expit(B)
+init[2] <- (mu[2]+1)/2
+opt <- optim(
+  par = init, 
+  fn = function(uv) -exp(-minus_logf(uv)) * (uv[2] - mu[2])^2,  
+  #gr = function(uv) -gr(uv) + c(1/uv[1], 0),
+  method = "L-BFGS-B", 
+  lower = c(1e-16, mu[2]), 
+  upper = c(1-1e-16, 1-1e-16)
+) 
+vmax[2] <- opt[["value"]]
+```
+
