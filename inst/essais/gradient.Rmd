@@ -127,7 +127,7 @@ opt <- optim(
   lower = c(mu[1], 1e-16), 
   upper = c(1-1e-16, 1-1e-16)
 ) 
-vmax[1] <- sqrt(opt[["value"]])
+vmax[1] <- sqrt(-opt[["value"]])
 #
 init <- expit(B)
 init[2] <- (mu[2]+1)/2
@@ -139,6 +139,22 @@ opt <- optim(
   lower = c(1e-16, mu[2]), 
   upper = c(1-1e-16, 1-1e-16)
 ) 
-vmax[2] <- opt[["value"]]
+vmax[2] <- sqrt(-opt[["value"]]) 
+```
+
+```{r}
+nsims <- 5L
+sims <- matrix(NA_real_, nrow = nsims, ncol = 2)
+k <- 0L
+while(k < nsims){
+  u <- runif(1L, 0, umax)
+  v <- runif(2L, vmin, vmax)
+  x <- v/u + mu
+  test <- all(x > 0) && all(x < 1) && u < sqrt(f(x))
+  if(test){
+    k <- k + 1L
+    sims[k, ] <- x
+  }
+}
 ```
 
