@@ -117,9 +117,15 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
           HH[[counter]] <- H[[i]]
           At_new <- cbind(At_new, At[, i])
           if(ncopies > 1L){
-            VT <- q2d(scdd(H[[i]])$output)
+            VT <- q2d(scdd(H[[i]])[["output"]])
             b <- QQt %*% At[, i]
             B <- Pt %*% At[, i]
+            # #
+            # assign("P", P, envir = .GlobalEnv)
+            # assign("b", b, envir = .GlobalEnv)
+            # assign("B", B, envir = .GlobalEnv)
+            # #
+            # stop()
             BTILDES <- rcd(ncopies-1L, P, b, B)
             points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
             rays <- VT[!isone(VT[, 2L]), idx, drop = FALSE]

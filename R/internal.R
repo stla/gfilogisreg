@@ -25,22 +25,121 @@ rtlogis2 <- function(b){
   out
 }
 
-logit <- function(u) log(u/(1-u))
-dlogit <- function(u) 1/(u*(1-u))
-expit <- function(x) exp(x) / (1+exp(x))
+logit <- function(u) log(u/(1-u)) # = qlogis
+dlogit <- function(u) 1 / (u*(1-u))
+expit <- function(x)  1 / (1+exp(-x)) # = plogis
 
-#' @importFrom Runuran ur vnrou.new
-#' @importFrom stats dlogis
+ldlogit <- function(u) -log(u) - log1p(-u)
+ldlogis <- function(x) x - 2*log1p(exp(x))
+dldlogis <- function(x) 1 - 2*expit(x)
+
+#' @importFrom BB BBoptim
+#' @importFrom stats dlogis runif
 #' @noRd
 rcd <- function(n, P, b, B){
   d <- length(B)
-  logit(ur(
-    unr = vnrou.new(
-      dim = d,
-      pdf = function(u) prod(dlogis(c(P %*% logit(u) + b))) * prod(dlogit(u)),
-      center = expit(c(B)),
-      ll = rep(0, d), ur = rep(1, d)
-    ),
-    n = n
-  ))
+  f <- function(uv){
+    vecx <- c(P %*% logit(uv) + b)
+    prod(dlogis(vecx)) * prod(dlogit(uv))
+  }
+  logf <- function(uv){
+    vecx <- c(P %*% logit(uv) + b)
+    sum(ldlogis(vecx)) + sum(ldlogit(uv))
+  }
+  grl_i <- function(uv, i){
+    vecx <- c(P %*% logit(uv) + b)
+    dlogit(uv[i]) * sum(P[, i] * dldlogis(vecx)) + (2*uv[i]-1)/(uv[i]*(1-uv[i]))
+  }
+  grl <- function(uv){
+    vapply(1L:d, function(i) grl_i(uv, i), numeric(1L))
+  }
+  gr <- function(uv){
+    f(uv) * grl(uv)
+  }
+  eps <- .Machine$double.eps
+  # umax ####
+  opt <- BBoptim(
+    par = expit(c(B)),
+    fn = logf,
+    gr = grl,
+    lower = rep(eps, d),
+    upper = rep(1-eps, d),
+    control = list(
+      maximize = TRUE,
+      trace = FALSE,
+      checkGrad = FALSE,
+      maxit = 10000
+    )
+  )
+  if(opt$convergence != 0) stop(sprintf("umax - code: %d", opt$convergence))
+  mu <- opt[["par"]]
+  umax <- sqrt(exp(opt[["value"]]))
+  # vmin ####
+  vmin <- numeric(d)
+  for(i in 1L:d){ # !!!! rd !!!!! ici d=2 uniquement !!!
+    opt <- BBoptim(
+      par = `[<-`(rep(0.5, d), i, mu[i]/2),
+      fn = function(uv) -(logf(uv) + 4*log(mu[i] - uv[i])),
+      gr = function(uv) -grl(uv) + 4 * `[<-`(numeric(d), i, 1/(mu[i] - uv[i])),
+      lower = rep(eps, d),
+      upper = `[<-`(rep(1, d), i, mu[i]) - eps,
+      control = list(
+        maximize = FALSE,
+        trace = FALSE,
+        checkGrad = FALSE,
+        maxit = 10000
+      )
+    )
+    vmin[i] <- -exp(-opt[["value"]]/4)
+    if(opt$convergence != 0) stop(sprintf("vmin - code: %d", opt$convergence))
+  }
+  # vmax ####
+  vmax <- numeric(d)
+  for(i in 1L:d){ # !!!! rd !!!!! ici d=2 uniquement !!!
+    opt <- BBoptim(
+      par = `[<-`(rep(0.5, d), i, (mu[i]+1)/2),
+      fn = function(uv) logf(uv) + 4*log(uv[i] - mu[i]),
+      gr = function(uv) grl(uv) - 4 * `[<-`(numeric(d), i, 1/(mu[i] - uv[i])),
+      lower = `[<-`(numeric(d), i, mu[i]) + eps,
+      upper = rep(1-eps, d),
+      control = list(
+        maximize = TRUE,
+        trace = FALSE,
+        checkGrad = FALSE,
+        maxit = 10000
+      )
+    )
+    vmax[i] <- exp(opt[["value"]]/4)
+    if(opt$convergence != 0) stop(sprintf("vmax - code: %d", opt$convergence))
+  }
+  # simulations
+  sims <- matrix(NA_real_, nrow = n, ncol = d)
+  k <- 0L
+  while(k < n){
+    u <- runif(1L, 0, umax)
+    v <- runif(d, vmin, vmax)
+    x <- v/sqrt(u) + mu
+    if(all(x > 0) && all(x < 1) && u < sqrt(f(x))){
+      k <- k + 1L
+      sims[k, ] <- x
+    }
+  }
+  logit(sims)
 }
+
+
+# #' @importFrom Runuran ur vnrou.new
+# #' @importFrom stats dlogis
+# #' @noRd
+# rcd <- function(n, P, b, B){
+#   d <- length(B)
+#   logit(ur(
+#     unr = vnrou.new(
+#       dim = d,
+#       pdf = function(u) prod(dlogis(c(P %*% logit(u) + b))) * prod(dlogit(u)),
+#       center = expit(c(B)),
+#       ll = rep(0, d), ur = rep(1, d)
+#     ),
+#     n = n
+#   ))
+# }
