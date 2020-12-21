@@ -36,9 +36,9 @@ public:
   }
   void Gradient(const arma::vec &u, arma::vec &gr) override {
     gr = arma::zeros<arma::vec>(d);
+    const arma::vec y = dldlogis(P * logit(u) + b);
     for(size_t i = 0; i < d; i++){
-      const arma::vec x = P * logit(u) + b;
-      gr(i) = dlogit(u[i]) * arma::sum(P.col(i) % dldlogis(x)) +
+      gr(i) = dlogit(u[i]) * arma::sum(P.col(i) % y) +
         (2.0*u[i]-1.0) / (u[i] * (1-u[i]));
     }
   }
@@ -46,15 +46,17 @@ public:
 
 // [[Rcpp::export]]
 void get_umax(arma::mat& P, arma::vec& b, arma::vec& B) {
+  double eps = std::numeric_limits<double>::epsilon();
+  Rcpp::Rcout << "epsilon: " << eps << "\n";
   Logf logf;
   logf.P = P; logf.b = b; logf.d = B.size();
   Roptim<Logf> opt("L-BFGS-B");
-  opt.control.trace = 6;
+  opt.control.trace = 1;
   opt.control.fnscale = -1.0; // maximize
-  //  opt.control.factr = 1.0e3;
+  //  opt.control.factr = 3.0e-36;
   opt.set_hessian(false);
-  arma::vec lwr = arma::zeros(B.size()) + 1.0e-8;
-  arma::vec upr = arma::ones(B.size()) - 1.0e-8;
+  arma::vec lwr = arma::zeros(B.size()) + eps;
+  arma::vec upr = arma::ones(B.size()) - eps;
   opt.set_lower(lwr); opt.set_upper(upr);
   opt.minimize(logf, B);
   Rcpp::Rcout << "-------------------------" << std::endl;
