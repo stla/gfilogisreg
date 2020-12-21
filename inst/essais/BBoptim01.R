@@ -12,6 +12,8 @@ P <- structure(c(-0.816496580927726, -0.408248290463863, 0, 0.408248290463863,
 ), .Dim = c(4L, 2L))
 b <- c(-0.497055737731043, 1.5763637399835, -1.66156026677388,
        0.582252264521417)
+b <- c(-0.549834236699787, 0.408894029413032, 0.831714651273296,
+       -0.690774443986541)
 
 f <- function(uv){
   vecx <- P %*% logit(uv) + b
@@ -21,6 +23,23 @@ minus_logf <- function(uv){
   vecx <- P %*% logit(uv) + b
   -sum(ldlogis(vecx)) - sum(ldlogit(uv))
 }
+
+library(graph3d)
+dat <- expand.grid(
+  x = seq(0.0001,0.9999,length.out=50),
+  y = seq(0.0001,0.9999,length.out=50)
+)
+dat$z <- -apply(dat, 1, minus_logf)
+graph3d(dat, z = ~z, keepAspectRatio = FALSE, verticalRatio = 1)
+minus_logf(c(1-1e-16, 1e-16))
+dat <- expand.grid(
+  x = seq(0.99, 0.999999,length.out=50),
+  y = seq(0.0000001,0.01,length.out=50)
+)
+dat$z <- -apply(dat, 1, minus_logf)
+graph3d(dat, z = ~z, keepAspectRatio = FALSE, verticalRatio = 1)
+
+
 grl_i <- function(uv, i){
   vecx <- P %*% logit(uv) + b
   dlogit(uv[i]) * sum(P[, i] * dldlogis(vecx)) + (2*uv[i]-1)/(uv[i]*(1-uv[i]))
@@ -50,6 +69,16 @@ mu <- opt[["par"]]
 umax <- sqrt(opt[["value"]])
 
 # vmin ####
+
+fn = function(uv) -(-minus_logf(uv) + 4*log(mu[1] - uv[1]))
+dat <- expand.grid(
+  x = seq(1e-10,mu[1]-1e-10,length.out=50),
+  y = seq(1e-10,1-1e-10,length.out=50)
+)
+dat$z <- apply(dat, 1, fn)
+graph3d(dat, z = ~z, keepAspectRatio = FALSE, verticalRatio = 1)
+
+
 vmin <- c(NA_real_, NA_real_)
 #
 init <- expit(B)
