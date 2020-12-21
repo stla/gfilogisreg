@@ -25,43 +25,72 @@ arma::vec dldlogis(const arma::vec& x) {
   return 1.0 - 2.0 / (1.0 + arma::exp(-x));
 }
 
+double log_f(const arma::vec &u, const arma::mat& P, const arma::vec& b){
+  const arma::vec x = P * logit(u) + b;
+  return arma::sum(ldlogis(x)) + arma::sum(ldlogit(u));
+}
+
+double dlog_f(const double ui, const arma::vec& Pi, const arma::vec& y){
+  return dlogit(ui) * arma::sum(Pi % y) + (2.0*ui-1.0) / (ui * (1-ui));
+}
+
 class Logf : public Functor {
 public:
   arma::mat P;
   arma::vec b;
   size_t d;
   double operator()(const arma::vec &u) override {
-    const arma::vec x = P * logit(u) + b;
-    return arma::sum(ldlogis(x)) + arma::sum(ldlogit(u));
+    return log_f(u, P, b);
   }
   void Gradient(const arma::vec &u, arma::vec &gr) override {
     gr = arma::zeros<arma::vec>(d);
     const arma::vec y = dldlogis(P * logit(u) + b);
     for(size_t i = 0; i < d; i++){
-      gr(i) = dlogit(u[i]) * arma::sum(P.col(i) % y) +
-        (2.0*u[i]-1.0) / (u[i] * (1-u[i]));
+      gr(i) = dlog_f(u[i], P.col(i), y);
     }
   }
 };
 
-// [[Rcpp::export]]
-void get_umax(arma::mat& P, arma::vec& b, arma::vec& B) {
+Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec B) {
   double eps = std::numeric_limits<double>::epsilon();
-  Rcpp::Rcout << "epsilon: " << eps << "\n";
   Logf logf;
   logf.P = P; logf.b = b; logf.d = B.size();
   Roptim<Logf> opt("L-BFGS-B");
   opt.control.trace = 1;
+  opt.control.maxit = 1000;
   opt.control.fnscale = -1.0; // maximize
-  //  opt.control.factr = 3.0e-36;
+  opt.control.factr = 1.0;
   opt.set_hessian(false);
   arma::vec lwr = arma::zeros(B.size()) + eps;
   arma::vec upr = arma::ones(B.size()) - eps;
   opt.set_lower(lwr); opt.set_upper(upr);
   opt.minimize(logf, B);
   Rcpp::Rcout << "-------------------------" << std::endl;
-  opt.print();
+  //  opt.print();
+  return Rcpp::List::create(
+    Rcpp::Named("par") = opt.par(),
+    Rcpp::Named("value") = opt.value()
+  );
+}
 
+// [[Rcpp::export]]
+Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::mat& Bs){
+  const size_t n = Bs.n_cols;
+  const size_t d = Bs.n_rows;
+  std::vector<arma::vec> pars(n);
+  arma::vec values(n);
+  for(size_t i = 0; i < n; i++){
+    const Rcpp::List L = get_umax0(P, b, Bs.col(i));
+    const arma::vec par = L["par"];
+    pars[i] = par;
+    //double value = L["value"];
+    values(i) = L["value"];
+  }
+  const size_t imax = values.index_max();
+  return Rcpp::List::create(
+    Rcpp::Named("mu") = pars[imax],
+                            Rcpp::Named("umax") = pow(exp(values(imax)), 2.0/(2.0 + d))
+  );
 }
 
 class Rosen : public Functor {
