@@ -73,14 +73,14 @@ rcd <- function(n, P, b, B){
   )
   if(opt$convergence != 0) stop(sprintf("umax - code: %d", opt$convergence))
   mu <- opt[["par"]]
-  umax <- sqrt(exp(opt[["value"]]))
+  umax <- (exp(opt[["value"]]))^(1/(d/2+1))
   # vmin ####
   vmin <- numeric(d)
-  for(i in 1L:d){ # !!!! rd !!!!! ici d=2 uniquement !!!
+  for(i in 1L:d){
     opt <- BBoptim(
       par = `[<-`(rep(0.5, d), i, mu[i]/2),
-      fn = function(uv) -(logf(uv) + 4*log(mu[i] - uv[i])),
-      gr = function(uv) -grl(uv) + 4 * `[<-`(numeric(d), i, 1/(mu[i] - uv[i])),
+      fn = function(uv) -(logf(uv) + (d+2) * log(mu[i] - uv[i])),
+      gr = function(uv) -grl(uv) + (d+2) * `[<-`(numeric(d), i, 1/(mu[i] - uv[i])),
       lower = rep(eps, d),
       upper = `[<-`(rep(1, d), i, mu[i]) - eps,
       control = list(
@@ -90,16 +90,16 @@ rcd <- function(n, P, b, B){
         maxit = 10000
       )
     )
-    vmin[i] <- -exp(-opt[["value"]]/4)
+    vmin[i] <- -exp(-opt[["value"]]/(d+2))
     if(opt$convergence != 0) stop(sprintf("vmin - code: %d", opt$convergence))
   }
   # vmax ####
   vmax <- numeric(d)
-  for(i in 1L:d){ # !!!! rd !!!!! ici d=2 uniquement !!!
+  for(i in 1L:d){
     opt <- BBoptim(
       par = `[<-`(rep(0.5, d), i, (mu[i]+1)/2),
-      fn = function(uv) logf(uv) + 4*log(uv[i] - mu[i]),
-      gr = function(uv) grl(uv) - 4 * `[<-`(numeric(d), i, 1/(mu[i] - uv[i])),
+      fn = function(uv) logf(uv) + (d+2) * log(uv[i] - mu[i]),
+      gr = function(uv) grl(uv) - (d+2) * `[<-`(numeric(d), i, 1/(mu[i] - uv[i])),
       lower = `[<-`(numeric(d), i, mu[i]) + eps,
       upper = rep(1-eps, d),
       control = list(
@@ -109,7 +109,7 @@ rcd <- function(n, P, b, B){
         maxit = 10000
       )
     )
-    vmax[i] <- exp(opt[["value"]]/4)
+    vmax[i] <- exp(opt[["value"]]/(d+2))
     if(opt$convergence != 0) stop(sprintf("vmax - code: %d", opt$convergence))
   }
   # simulations
