@@ -47,7 +47,7 @@ double dlogit(double u) {
 }
 
 arma::vec ldlogit(const arma::vec& u) {
-  return -arma::log(u) - arma::log1p(-u);
+  return -arma::log(u % (1.0-u));
 }
 
 arma::vec ldlogis(const arma::vec& x) {
@@ -131,13 +131,13 @@ public:
 };
 
 Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec init) {
-  double eps = std::numeric_limits<double>::epsilon();
+  double eps = sqrt(std::numeric_limits<double>::epsilon());
   Logf logf;
   logf.P = P;
   logf.b = b;
   Roptim<Logf> opt("L-BFGS-B");
-  opt.control.trace = 1;
-  opt.control.maxit = 1000;
+  opt.control.trace = 0;
+  opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
   //opt.control.factr = 1.0;
   opt.set_hessian(false);
@@ -146,7 +146,11 @@ Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec init) {
   opt.set_lower(lwr);
   opt.set_upper(upr);
   opt.minimize(logf, init);
-  Rcpp::Rcout << "-------------------------" << std::endl;
+  if(opt.convergence() != 0){
+    Rcpp::Rcout << "-- umax -----------------------" << std::endl;
+    opt.print();
+  }
+  //Rcpp::Rcout << "-------------------------" << std::endl;
   //  opt.print();
   return Rcpp::List::create(Rcpp::Named("par") = opt.par(),
                             Rcpp::Named("value") = opt.value());
@@ -176,15 +180,15 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
 double get_vmin_i(
     const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
 ) {
-  double eps = std::numeric_limits<double>::epsilon();
+  double eps = sqrt(std::numeric_limits<double>::epsilon());
   uLogf1 ulogf1;
   ulogf1.P = P;
   ulogf1.b = b;
   ulogf1.j = i;
   ulogf1.mu = mu;
   Roptim<uLogf1> opt("L-BFGS-B");
-  opt.control.trace = 1;
-  opt.control.maxit = 1000;
+  opt.control.trace = 0;
+  opt.control.maxit = 10000;
   //opt.control.fnscale = 1.0;  // minimize
   //opt.control.factr = 1.0;
   opt.set_hessian(false);
@@ -197,7 +201,11 @@ double get_vmin_i(
   opt.set_lower(lwr);
   opt.set_upper(upr - eps);
   opt.minimize(ulogf1, init);
-  Rcpp::Rcout << "-------------------------" << std::endl;
+  if(opt.convergence() != 0){
+    Rcpp::Rcout << "-- vmin -----------------------" << std::endl;
+    opt.print();
+  }
+  //Rcpp::Rcout << "-------------------------" << std::endl;
   return -exp(-opt.value() / (d+2));
 }
 
@@ -216,15 +224,15 @@ arma::vec get_vmin(
 double get_vmax_i(
     const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
 ) {
-  double eps = std::numeric_limits<double>::epsilon();
+  double eps = sqrt(std::numeric_limits<double>::epsilon());
   uLogf2 ulogf2;
   ulogf2.P = P;
   ulogf2.b = b;
   ulogf2.j = i;
   ulogf2.mu = mu;
   Roptim<uLogf2> opt("L-BFGS-B");
-  opt.control.trace = 1;
-  opt.control.maxit = 1000;
+  opt.control.trace = 0;
+  opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
   //opt.control.factr = 1.0;
   opt.set_hessian(false);
@@ -237,7 +245,10 @@ double get_vmax_i(
   opt.set_lower(lwr + eps);
   opt.set_upper(upr);
   opt.minimize(ulogf2, init);
-  Rcpp::Rcout << "-------------------------" << std::endl;
+  if(opt.convergence() != 0){
+    Rcpp::Rcout << "-- vmax -----------------------" << std::endl;
+    opt.print();
+  }
   return exp(opt.value() / (d+2));
 }
 
@@ -260,6 +271,7 @@ Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b){
   arma::vec vmin = get_vmin(P, b, mu);
   arma::vec vmax = get_vmax(P, b, mu);
   return Rcpp::List::create(Rcpp::Named("umax") = umax,
+                            Rcpp::Named("mu") = mu,
                             Rcpp::Named("vmin") = vmin,
                             Rcpp::Named("vmax") = vmax);
 }
