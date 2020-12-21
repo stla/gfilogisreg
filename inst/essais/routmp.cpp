@@ -5,6 +5,40 @@ using namespace roptim;
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(roptim)]]
 
+std::vector<size_t> CantorExpansion(size_t n, std::vector<size_t> s){
+  std::vector<size_t> out(s.size());
+  std::vector<size_t>::iterator it;
+  it = s.begin();
+  it = s.insert ( it , 1 );
+  size_t G[s.size()];
+  std::partial_sum (s.begin(), s.end(), G, std::multiplies<size_t>());
+  size_t k;
+  while(n>0){
+    k=1;
+    while(G[k]<=n){
+      k++;
+    }
+    out[k-1] = n / G[k-1];
+    n = n % G[k-1];
+  }
+  return out;
+}
+
+// [[Rcpp::export]]
+arma::mat grid(const size_t d){
+  std::array<double, 3> x = {0.01, 0.5, 0.99};
+  size_t p = pow((size_t)3, d);
+  arma::mat out(d, p);
+  std::vector<size_t> threes(d, 3);
+  for(size_t n = 0; n < p; n++){
+    std::vector<size_t> indices = CantorExpansion(n, threes);
+    for(size_t i = 0; i < d; i++){
+      out(i, n) = x[indices[i]];
+    }
+  }
+  return out;
+}
+
 arma::vec logit(const arma::vec& u) {
   return arma::log(u) - arma::log(1.0 - u);
 }
