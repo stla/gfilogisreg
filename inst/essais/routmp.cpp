@@ -108,9 +108,10 @@ Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec B) {
 }
 
 // [[Rcpp::export]]
-Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::mat& Bs){
+Rcpp::List get_umax(const arma::mat& P, const arma::vec& b){
+  const size_t d = P.n_cols;
+  const arma::mat Bs = grid(d);
   const size_t n = Bs.n_cols;
-  const size_t d = Bs.n_rows;
   std::vector<arma::vec> pars(n);
   arma::vec values(n);
   for(size_t i = 0; i < n; i++){
