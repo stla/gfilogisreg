@@ -107,6 +107,30 @@ public:
   }
 };
 
+class uLogf2 : public Functor {
+public:
+  arma::mat P;
+  arma::vec b;
+  arma::vec mu;
+  size_t j;
+  double operator()(const arma::vec& u) override {
+    const size_t d = P.n_cols;
+    return log_f(u, P, b) + (d+2) * log(u.at(j) - mu[j]);
+  }
+  void Gradient(const arma::vec& u, arma::vec& gr) override {
+    const size_t d = P.n_cols;
+    gr = arma::zeros<arma::vec>(d);
+    const arma::vec y = dldlogis(P * logit(u) + b);
+    for(size_t i = 0; i < d; i++) {
+      if(i == j){
+        gr(i) = dlog_f(u[i], P.col(i), y) - (d+2) / (mu[i] - u.at(i));
+      }else{
+        gr(i) = dlog_f(u[i], P.col(i), y);
+      }
+    }
+  }
+};
+
 Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec init) {
   double eps = std::numeric_limits<double>::epsilon();
   Logf logf;
@@ -116,7 +140,7 @@ Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec init) {
   opt.control.trace = 1;
   opt.control.maxit = 1000;
   opt.control.fnscale = -1.0;  // maximize
-  opt.control.factr = 1.0;
+  //opt.control.factr = 1.0;
   opt.set_hessian(false);
   arma::vec lwr = arma::zeros(init.size()) + eps;
   arma::vec upr = arma::ones(init.size()) - eps;
@@ -149,9 +173,81 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
                             Rcpp::Named("umax") = pow(exp(values(imax)), 2.0 / (2.0 + d)));
 }
 
+double get_vmin_i(
+    const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
+) {
+  double eps = std::numeric_limits<double>::epsilon();
+  uLogf1 ulogf1;
+  ulogf1.P = P;
+  ulogf1.b = b;
+  ulogf1.j = i;
+  Roptim<uLogf1> opt("L-BFGS-B");
+  opt.control.trace = 1;
+  opt.control.maxit = 1000;
+  //opt.control.fnscale = 1.0;  // minimize
+  //opt.control.factr = 1.0;
+  opt.set_hessian(false);
+  const size_t d = P.n_cols;
+  arma::vec init = 0.5 * arma::ones(d);
+  init.at(i) = mu.at(i) / 2.0;
+  arma::vec lwr = arma::zeros(d) + eps;
+  arma::vec upr = arma::ones(d);
+  upr.at(i) = mu.at(i);
+  opt.set_lower(lwr);
+  opt.set_upper(upr - eps);
+  opt.minimize(ulogf1, init);
+  Rcpp::Rcout << "-------------------------" << std::endl;
+  return -exp(-opt.value() / (d+2));
+}
 
+arma::vec get_vmin(
+    const arma::mat& P, const arma::vec& b, const arma::vec& mu
+) {
+  const size_t d = P.n_cols;
+  arma::vec vmin(d);
+  for(size_t i = 0; i < d; i++){
+    vmin.at(i) = get_vmin_i(P, b, i, mu);
+  }
+  return vmin;
+}
 
+double get_vmax_i(
+    const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
+) {
+  double eps = std::numeric_limits<double>::epsilon();
+  uLogf2 ulogf2;
+  ulogf2.P = P;
+  ulogf2.b = b;
+  ulogf2.j = i;
+  Roptim<uLogf2> opt("L-BFGS-B");
+  opt.control.trace = 1;
+  opt.control.maxit = 1000;
+  opt.control.fnscale = -1.0;  // maximize
+  //opt.control.factr = 1.0;
+  opt.set_hessian(false);
+  const size_t d = P.n_cols;
+  arma::vec init = 0.5 * arma::ones(d);
+  init.at(i) = (mu.at(i) + 1.0) / 2.0;
+  arma::vec lwr = arma::zeros(d);
+  lwr.at(i) = mu.at(i);
+  arma::vec upr = arma::ones(d) - eps;
+  opt.set_lower(lwr + eps);
+  opt.set_upper(upr);
+  opt.minimize(ulogf2, init);
+  Rcpp::Rcout << "-------------------------" << std::endl;
+  return exp(opt.value() / (d+2));
+}
 
+arma::vec get_vmax(
+    const arma::mat& P, const arma::vec& b, const arma::vec& mu
+) {
+  const size_t d = P.n_cols;
+  arma::vec vmax(d);
+  for(size_t i = 0; i < d; i++){
+    vmax.at(i) = get_vmax_i(P, b, i, mu);
+  }
+  return vmax;
+}
 
 
 
