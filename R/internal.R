@@ -73,7 +73,7 @@ rcd <- function(n, P, b, B){
   )
   if(opt$convergence != 0) stop(sprintf("umax - code: %d", opt$convergence))
   mu <- opt[["par"]]
-  umax <- (exp(opt[["value"]]))^(1/(d/2+1))
+  umax <- (exp(opt[["value"]]))^(2/(d+2))
   # vmin ####
   vmin <- numeric(d)
   for(i in 1L:d){
@@ -119,7 +119,7 @@ rcd <- function(n, P, b, B){
     u <- runif(1L, 0, umax)
     v <- runif(d, vmin, vmax)
     x <- v/sqrt(u) + mu
-    if(all(x > 0) && all(x < 1) && u < sqrt(f(x))){
+    if(all(x > 0) && all(x < 1) && u < f(x)^(2/(d+2))){
       k <- k + 1L
       sims[k, ] <- x
     }
