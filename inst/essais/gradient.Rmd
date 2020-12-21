@@ -143,7 +143,7 @@ vmax[2] <- (-opt[["value"]])^0.25
 ```
 
 ```{r}
-nsims <- 2000L
+nsims <- 3000L
 sims <- matrix(NA_real_, nrow = nsims, ncol = 2)
 k <- 0L
 while(k < nsims){
@@ -167,3 +167,4 @@ plot(logit(sims[,1]), logit(sims[,2]))
 points(sims2[,1], sims2[,2], col = "red")
 ```
 
+todo: use BBoptim, check gradient with numDeriv
