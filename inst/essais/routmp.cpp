@@ -24,7 +24,6 @@ std::vector<size_t> CantorExpansion(size_t n, std::vector<size_t> s) {
   return out;
 }
 
-// [[Rcpp::export]]
 arma::mat grid(const size_t d) {
   std::array<double, 3> x = {0.01, 0.5, 0.99};
   size_t p = pow((size_t)3, d);
@@ -249,7 +248,16 @@ arma::vec get_vmax(
   return vmax;
 }
 
-
+// [[Rcpp::export]]
+Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b){
+  const Rcpp::List L = get_umax(P, b);
+  const arma::vec mu = L["mu"];
+  const arma::vec vmin = get_vmin(P, b, mu);
+  const arma::vec vmax = get_vmax(P, b, mu);
+  return Rcpp::List::create(Rcpp::Named("umax") = L["umax"],
+                            Rcpp::Named("vmin") = vmin,
+                            Rcpp::Named("vmax") = vmax);
+}
 
 
 
