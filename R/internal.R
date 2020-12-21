@@ -73,7 +73,14 @@ rcd <- function(n, P, b, B){
     ),
     quiet = TRUE
   )
-  if(opt$convergence != 0) stop(sprintf("umax - code: %d", opt$convergence))
+  if(opt[["convergence"]] != 0){
+    stop(
+      sprintf(
+        "Convergence not achieved (umax) - code: %d.",
+        opt[["convergence"]]
+      )
+    )
+  }
   mu <- opt[["par"]]
   umax <- (exp(opt[["value"]]))^(2/(d+2))
   # vmin ####
@@ -94,8 +101,15 @@ rcd <- function(n, P, b, B){
       ),
       quiet = TRUE
     )
+    if(opt[["convergence"]] != 0){
+      stop(
+        sprintf(
+          "Convergence not achieved (vmin) - code: %d.",
+          opt[["convergence"]]
+        )
+      )
+    }
     vmin[i] <- -exp(-opt[["value"]]/(d+2))
-    if(opt$convergence != 0) stop(sprintf("vmin - code: %d", opt$convergence))
   }
   # vmax ####
   vmax <- numeric(d)
@@ -115,8 +129,15 @@ rcd <- function(n, P, b, B){
       ),
       quiet = TRUE
     )
+    if(opt[["convergence"]] != 0){
+      stop(
+        sprintf(
+          "Convergence not achieved (vmax) - code: %d.",
+          opt[["convergence"]]
+        )
+      )
+    }
     vmax[i] <- exp(opt[["value"]]/(d+2))
-    if(opt$convergence != 0) stop(sprintf("vmax - code: %d", opt$convergence))
   }
   # simulations
   sims <- matrix(NA_real_, nrow = n, ncol = d)
