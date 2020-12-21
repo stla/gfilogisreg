@@ -5,22 +5,62 @@ using namespace roptim;
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(roptim)]]
 
-arma::vec logit(arma::vec& u) {
-  return arma::log(u) - arma::log(1 - u);
+arma::vec logit(const arma::vec& u) {
+  return arma::log(u) - arma::log(1.0 - u);
 }
 
-arma::vec ldlogit(arma::vec& u) {
-  return -arma::log(u) - arma::log1p(1 - u);
+double dlogit(double u){
+  return 1.0 / (u*(1.0-u));
 }
 
-arma::vec ldlogis(arma::vec& x) {
+arma::vec ldlogit(const arma::vec& u) {
+  return -arma::log(u) - arma::log1p(-u);
+}
+
+arma::vec ldlogis(const arma::vec& x) {
   return x - 2.0 * arma::log1p(arma::exp(x));
 }
 
-arma::vec dldlogis(arma::vec& x) {
+arma::vec dldlogis(const arma::vec& x) {
   return 1.0 - 2.0 / (1.0 + arma::exp(-x));
 }
 
+class Logf : public Functor {
+public:
+  arma::mat P;
+  arma::vec b;
+  size_t d;
+  double operator()(const arma::vec &u) override {
+    const arma::vec x = P * logit(u) + b;
+    return arma::sum(ldlogis(x)) + arma::sum(ldlogit(u));
+  }
+  void Gradient(const arma::vec &u, arma::vec &gr) override {
+    gr = arma::zeros<arma::vec>(d);
+    for(size_t i = 0; i < d; i++){
+      const arma::vec x = P * logit(u) + b;
+      gr(i) = dlogit(u[i]) * arma::sum(P.col(i) % dldlogis(x)) +
+        (2.0*u[i]-1.0) / (u[i] * (1-u[i]));
+    }
+  }
+};
+
+// [[Rcpp::export]]
+void get_umax(arma::mat& P, arma::vec& b, arma::vec& B) {
+  Logf logf;
+  logf.P = P; logf.b = b; logf.d = B.size();
+  Roptim<Logf> opt("L-BFGS-B");
+  opt.control.trace = 6;
+  opt.control.fnscale = -1.0; // maximize
+  //  opt.control.factr = 1.0e3;
+  opt.set_hessian(false);
+  arma::vec lwr = arma::zeros(B.size()) + 1.0e-8;
+  arma::vec upr = arma::ones(B.size()) - 1.0e-8;
+  opt.set_lower(lwr); opt.set_upper(upr);
+  opt.minimize(logf, B);
+  Rcpp::Rcout << "-------------------------" << std::endl;
+  opt.print();
+
+}
 
 class Rosen : public Functor {
 public:
