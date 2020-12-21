@@ -172,6 +172,7 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
                             Rcpp::Named("umax") = pow(exp(values(imax)), 2.0 / (2.0 + d)));
 }
 
+// [[Rcpp::export]]
 double get_vmin_i(
     const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
 ) {
@@ -180,6 +181,7 @@ double get_vmin_i(
   ulogf1.P = P;
   ulogf1.b = b;
   ulogf1.j = i;
+  ulogf1.mu = mu;
   Roptim<uLogf1> opt("L-BFGS-B");
   opt.control.trace = 1;
   opt.control.maxit = 1000;
@@ -199,6 +201,7 @@ double get_vmin_i(
   return -exp(-opt.value() / (d+2));
 }
 
+// [[Rcpp::export]]
 arma::vec get_vmin(
     const arma::mat& P, const arma::vec& b, const arma::vec& mu
 ) {
@@ -218,6 +221,7 @@ double get_vmax_i(
   ulogf2.P = P;
   ulogf2.b = b;
   ulogf2.j = i;
+  ulogf2.mu = mu;
   Roptim<uLogf2> opt("L-BFGS-B");
   opt.control.trace = 1;
   opt.control.maxit = 1000;
@@ -250,11 +254,12 @@ arma::vec get_vmax(
 
 // [[Rcpp::export]]
 Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b){
-  const Rcpp::List L = get_umax(P, b);
-  const arma::vec mu = L["mu"];
-  const arma::vec vmin = get_vmin(P, b, mu);
-  const arma::vec vmax = get_vmax(P, b, mu);
-  return Rcpp::List::create(Rcpp::Named("umax") = L["umax"],
+  Rcpp::List L = get_umax(P, b);
+  arma::vec mu = L["mu"];
+  double umax = L["umax"];
+  arma::vec vmin = get_vmin(P, b, mu);
+  arma::vec vmax = get_vmax(P, b, mu);
+  return Rcpp::List::create(Rcpp::Named("umax") = umax,
                             Rcpp::Named("vmin") = vmin,
                             Rcpp::Named("vmax") = vmax);
 }
