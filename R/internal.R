@@ -68,8 +68,10 @@ rcd <- function(n, P, b, B){
       maximize = TRUE,
       trace = FALSE,
       checkGrad = FALSE,
-      maxit = 10000
-    )
+      maxit = 10000,
+      maxfeval = 100000
+    ),
+    quiet = TRUE
   )
   if(opt$convergence != 0) stop(sprintf("umax - code: %d", opt$convergence))
   mu <- opt[["par"]]
@@ -87,8 +89,10 @@ rcd <- function(n, P, b, B){
         maximize = FALSE,
         trace = FALSE,
         checkGrad = FALSE,
-        maxit = 10000
-      )
+        maxit = 10000,
+        maxfeval = 100000
+      ),
+      quiet = TRUE
     )
     vmin[i] <- -exp(-opt[["value"]]/(d+2))
     if(opt$convergence != 0) stop(sprintf("vmin - code: %d", opt$convergence))
@@ -106,8 +110,10 @@ rcd <- function(n, P, b, B){
         maximize = TRUE,
         trace = FALSE,
         checkGrad = FALSE,
-        maxit = 10000
-      )
+        maxit = 10000,
+        maxfeval = 100000
+      ),
+      quiet = TRUE
     )
     vmax[i] <- exp(opt[["value"]]/(d+2))
     if(opt$convergence != 0) stop(sprintf("vmax - code: %d", opt$convergence))
