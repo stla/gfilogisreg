@@ -277,9 +277,40 @@ Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b){
 }
 
 
+// std::uniform_real_distribution<double> runif(0.0, 1.0);
+// std::default_random_engine generator(seed);
+// runif(generator)
+std::default_random_engine generator;
+std::uniform_real_distribution<double> runif(0.0, 1.0);
 
-
-
+arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b){
+  //, const size_t seed){
+  //  std::default_random_engine generator(seed);
+  //  std::uniform_real_distribution<double> runif(0.0, 1.0);
+  const size_t d = P.n_cols;
+  arma::mat tout(d, n);
+  const Rcpp::List bounds = get_bounds(P, b);
+  const double umax = bounds["umax"];
+  const arma::vec mu = bounds["mu"];
+  const arma::vec vmin = bounds["vmin"];
+  const arma::vec vmax = bounds["vmax"];
+  size_t k = 0;
+  while(k < n){
+    const double u = umax * runif(generator);
+    arma::vec v(d);
+    for(size_t i = 0; i < d; i++){
+      v.at(i) = vmin.at(i) + (vmax.at(i) - vmin.at(i)) * runif(generator);
+    }
+    const arma::vec x = v / sqrt(u) + mu;
+    bool test = arma::all(x > 0.0) && arma::all(x < 1.0) &&
+      (d+2) * log(u) < 2.0 * log_f(x, P, b);
+    if(test){
+      tout.col(k) = x;
+      k++;
+    }
+  }
+  return tout.t();
+}
 
 
 
