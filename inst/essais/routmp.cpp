@@ -312,6 +312,37 @@ arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b){
   return tout.t();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+double plogis(double x){
+  return 1.0/(1.0 + exp(-x));
+}
+
+double qlogis(double u){
+  return log(u/(1.0-u));
+}
+
+double MachineEps = std::numeric_limits<double>::epsilon();
+
+double rlogis1(double x){
+  double b = plogis(x);
+  if(b <= MachineEps){
+    return x;
+  }
+  std::uniform_real_distribution<double> ru(MachineEps, b);
+  return qlogis(ru(generator));
+}
+
+double rlogis2(double x){
+  double a = plogis(x);
+  if(a == 1){
+    return x;
+  }
+  std::uniform_real_distribution<double> ru(a, 1);
+  return qlogis(ru(generator));
+}
+
+
+
 
 
 
