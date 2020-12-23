@@ -390,8 +390,10 @@ Rcpp::CharacterMatrix addHin(Rcpp::CharacterMatrix H,
 }
 
 // [[Rcpp::export]]
-Rcpp::List loop1(Rcpp::List H,
-                 const Rcpp::List Points,
+Rcpp::List loop1(Rcpp::CharacterMatrix H,
+                 const Rcpp::IntegerVector hbreaks,
+                 const arma::mat& Points,
+                 const Rcpp::IntegerVector pbreaks,
                  const int y,
                  const arma::colvec& Xt) {
   const size_t nthreads = 4;
@@ -401,13 +403,80 @@ Rcpp::List loop1(Rcpp::List H,
     std::default_random_engine gen(seed + (t + 1) * 2000000);
     generators[t] = gen;
   }
-  Rcpp::NumericVector weight(H.size());
-  Rcpp::NumericVector At(H.size());
+  const size_t N = hbreaks.size() - 1;
+  const size_t p = H.cols() - 1;
+  Rcpp::NumericVector weight(N);
+  Rcpp::NumericVector At(N);
+  Rcpp::List Hnew(N);
   if(y == 0) {
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nthreads)
 #endif
-    for(auto i = 0; i < H.size(); i++) {
+    for(auto i = 0; i < N; i++) {
+#ifdef _OPENMP
+      const unsigned thread = omp_get_thread_num();
+#else
+      const unsigned thread = 0;
+#endif
+      arma::mat points = Points.rows(pbreaks(i), pbreaks(i + 1)-1);
+      double MIN = arma::min(points * Xt);
+      double atilde = rtlogis2(MIN, generators[thread]);
+      At(i) = atilde;
+      weight(i) = 1.0 - plogis(MIN);
+#pragma omp critical
+{
+      Hnew[i] = addHin(H(Rcpp::Range(hbreaks(i), hbreaks(i + 1)-1), Rcpp::Range(0, p)), Xt, atilde, true);
+}
+    }
+  } else {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(nthreads)
+#endif
+    for(auto i = 0; i < N; i++) {
+#ifdef _OPENMP
+      const unsigned thread = omp_get_thread_num();
+#else
+      const unsigned thread = 0;
+#endif
+      arma::mat points = Points.rows(pbreaks(i), pbreaks(i + 1)-1);
+      double MAX = arma::max(points * Xt);
+      double atilde = rtlogis1(MAX, generators[thread]);
+      At(i) = atilde;
+      weight(i) = plogis(MAX);
+#pragma omp critical
+{
+      Hnew[i] = addHin(H(Rcpp::Range(hbreaks(i), hbreaks(i + 1)-1), Rcpp::Range(0, p)), Xt, atilde, false);
+}
+    }
+  }
+  return Rcpp::List::create(Rcpp::Named("H") = Hnew, Rcpp::Named("At") = At,
+                            Rcpp::Named("weight") = weight);
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List lloop1(Rcpp::List H,
+                 const Rcpp::IntegerVector hbreaks,
+                 const Rcpp::List Points,
+                 const Rcpp::IntegerVector pbreaks,
+                 const int y,
+                 const arma::colvec& Xt) {
+  const size_t nthreads = 4;
+  const size_t seed = 666;
+  std::vector<std::default_random_engine> generators(nthreads);
+  for(size_t t = 0; t < nthreads; t++) {
+    std::default_random_engine gen(seed + (t + 1) * 2000000);
+    generators[t] = gen;
+  }
+  const size_t N = hbreaks.size() - 1;
+  Rcpp::NumericVector weight(N);
+  Rcpp::NumericVector At(N);
+  Rcpp::List Hnew(N);
+  if(y == 0) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(nthreads)
+#endif
+    for(auto i = 0; i < N; i++) {
 #ifdef _OPENMP
       const unsigned thread = omp_get_thread_num();
 #else
@@ -418,14 +487,16 @@ Rcpp::List loop1(Rcpp::List H,
       double atilde = rtlogis2(MIN, generators[thread]);
       At(i) = atilde;
       weight(i) = 1.0 - plogis(MIN);
-      Rcpp::CharacterMatrix Hi = H[i];
-      H[i] = addHin(Hi, Xt, atilde, true);
+#pragma omp critical
+{
+  H[i] = addHin(H[i], Xt, atilde, true);
+}
     }
   } else {
 #ifdef _OPENMP
 #pragma omp parallel for num_threads(nthreads)
 #endif
-    for(auto i = 0; i < H.size(); i++) {
+    for(auto i = 0; i < N; i++) {
 #ifdef _OPENMP
       const unsigned thread = omp_get_thread_num();
 #else
@@ -436,8 +507,10 @@ Rcpp::List loop1(Rcpp::List H,
       double atilde = rtlogis1(MAX, generators[thread]);
       At(i) = atilde;
       weight(i) = plogis(MAX);
-      Rcpp::CharacterMatrix Hi = H[i];
-      H[i] = addHin(Hi, Xt, atilde, false);
+#pragma omp critical
+{
+  H[i] = addHin(H[i], Xt, atilde, false);
+}
     }
   }
   return Rcpp::List::create(Rcpp::Named("H") = H, Rcpp::Named("At") = At,

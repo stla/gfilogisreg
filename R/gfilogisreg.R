@@ -83,7 +83,11 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
       V <- q2d(scdd(Hi)[["output"]])
       V[isone(V[, 2L]), idx, drop = FALSE]
     })
-    L <- loop1(H, Points, yK[t], Xt)
+    pbreaks <- cumsum(c(1L, vapply(Points, nrow, integer(1L)))) - 1L
+    #Points <- do.call(rbind, Points)
+    hbreaks <- cumsum(c(1L, vapply(H, nrow, integer(1L)))) - 1L
+    L <- lloop1(H, hbreaks, Points, pbreaks, yK[t], Xt)
+    # L <- loop1(do.call(rbind, H), hbreaks, Points, pbreaks, yK[t], Xt)
     H <- L[["H"]]
     At[p+t, ] <- L[["At"]]
     weight[t, ] <- L[["weight"]]
