@@ -4,6 +4,10 @@
 using namespace roptim;
 namespace mp = boost::multiprecision;
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(roptim)]]
 // [[Rcpp::depends(BH)]]
@@ -327,22 +331,22 @@ double qlogis(double u) {
 
 double MachineEps = std::numeric_limits<double>::epsilon();
 
-double rtlogis1(double x) {
+double rtlogis1(double x, std::default_random_engine gen) {
   double b = plogis(x);
   if(b <= MachineEps) {
     return x;
   }
   std::uniform_real_distribution<double> ru(MachineEps, b);
-  return qlogis(ru(generator));
+  return qlogis(ru(gen));
 }
 
-double rtlogis2(double x) {
+double rtlogis2(double x, std::default_random_engine gen) {
   double a = plogis(x);
   if(a == 1) {
     return x;
   }
   std::uniform_real_distribution<double> ru(a, 1);
-  return qlogis(ru(generator));
+  return qlogis(ru(gen));
 }
 
 std::string scalar2q(double x) {
@@ -390,23 +394,46 @@ Rcpp::List loop1(Rcpp::List H,
                  const Rcpp::List Points,
                  const int y,
                  const arma::colvec& Xt) {
+  const size_t nthreads = 4;
+  const size_t seed = 666;
+  std::vector<std::default_random_engine> generators(nthreads);
+  for(size_t t = 0; t < nthreads; t++) {
+    std::default_random_engine gen(seed + (t + 1) * 2000000);
+    generators[t] = gen;
+  }
   Rcpp::NumericVector weight(H.size());
   Rcpp::NumericVector At(H.size());
   if(y == 0) {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(nthreads)
+#endif
     for(auto i = 0; i < H.size(); i++) {
+#ifdef _OPENMP
+      const unsigned thread = omp_get_thread_num();
+#else
+      const unsigned thread = 0;
+#endif
       arma::mat points = Points[i];
       double MIN = arma::min(points * Xt);
-      double atilde = rtlogis2(MIN);
+      double atilde = rtlogis2(MIN, generators[thread]);
       At(i) = atilde;
       weight(i) = 1.0 - plogis(MIN);
       Rcpp::CharacterMatrix Hi = H[i];
       H[i] = addHin(Hi, Xt, atilde, true);
     }
   } else {
+#ifdef _OPENMP
+#pragma omp parallel for num_threads(nthreads)
+#endif
     for(auto i = 0; i < H.size(); i++) {
+#ifdef _OPENMP
+      const unsigned thread = omp_get_thread_num();
+#else
+      const unsigned thread = 0;
+#endif
       arma::mat points = Points[i];
       double MAX = arma::max(points * Xt);
-      double atilde = rtlogis1(MAX);
+      double atilde = rtlogis1(MAX, generators[thread]);
       At(i) = atilde;
       weight(i) = plogis(MAX);
       Rcpp::CharacterMatrix Hi = H[i];

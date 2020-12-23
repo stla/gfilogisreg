@@ -13,5 +13,5 @@ y <- c(matrix(c(
 
 glm(y ~ x, family = binomial())
 
-gf <- gfilogisreg(y ~ x, N = 2000)
+gf <- gfilogisreg(y ~ x, N = 6000)
 gfiConfInt(~ -`(Intercept)`/x, gf)
