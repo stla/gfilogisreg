@@ -13,12 +13,12 @@ LazyData: true
 RoxygenNote: 7.1.1
 Imports:
   rcdd,
-  Runuran,
   lazyeval,
   spatstat,
   EigenR,
   stats,
-  BB
+  Rcpp
+LinkingTo: Rcpp, RcppArmadillo, roptim
 Suggests: 
     knitr,
     rmarkdown

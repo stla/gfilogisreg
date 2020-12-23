@@ -126,7 +126,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
             # assign("B", B, envir = .GlobalEnv)
             # #
             # stop()
-            BTILDES <- rcd(ncopies-1L, P, b, B)
+            BTILDES <- rcd(ncopies-1L, P, b)#rcd(ncopies-1L, P, b, B)
             points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
             rays <- VT[!isone(VT[, 2L]), idx, drop = FALSE]
             for(j in 2L:ncopies){
