@@ -1,9 +1,39 @@
 #include "RcppArmadillo.h"
 #include "roptim.h"
+#include <boost/multiprecision/gmp.hpp>
 using namespace roptim;
+namespace mp = boost::multiprecision;
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(roptim)]]
+// [[Rcpp::depends(BH)]]
+
+
+std::string scalar2q(double x){
+  mp::mpq_rational q(x);
+  return q.convert_to<std::string>();
+}
+
+Rcpp::CharacterVector vector2q(arma::colvec& x){
+  Rcpp::CharacterVector out(x.size());
+  for(auto i = 0; i < x.size(); i++){
+    mp::mpq_rational q(x(i));
+    out(i) = q.convert_to<std::string>();
+  }
+  return out;
+}
+
+Rcpp::CharacterVector newColumn(arma::colvec& Xt, double atilde, const bool yzero){
+  if(yzero) {
+    Xt *= -1;
+  }else{
+    atilde *= -1;
+  }
+  arma::colvec head = {0.0, atilde};
+  arma::colvec newcol = arma::join_vert(head, Xt);
+  return vector2q(newcol);
+} // add column then transpose
+
 
 std::vector<size_t> CantorExpansion(size_t n, std::vector<size_t> s) {
   std::vector<size_t> out(s.size());

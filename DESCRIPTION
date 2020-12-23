@@ -18,7 +18,7 @@ Imports:
   EigenR,
   stats,
   Rcpp
-LinkingTo: Rcpp, RcppArmadillo, roptim
+LinkingTo: Rcpp, RcppArmadillo, roptim, BH
 Suggests: 
     knitr,
     rmarkdown
