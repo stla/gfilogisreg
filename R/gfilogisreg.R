@@ -78,25 +78,35 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
     }
     At <- rbind(At, NA_real_)
     Xt <- XK[t, ]
-    for(i in 1L:N){
-      V <- q2d(scdd(H[[i]])[["output"]])
-      points <- V[isone(V[, 2L]), idx, drop = FALSE]
-      if(yK[t] == 0L){
-        MIN <- min(points %*% Xt)
-        atilde <- rtlogis2(MIN)
-        weight[t, i] <- 1 - plogis(MIN)
-        H[[i]] <- addHin(d2q(Xt), d2q(atilde), H[[i]])
-      }else{ # yK[t] = 1L
-        MAX <- max(points %*% Xt)
-        atilde <- rtlogis1(MAX)
-        weight[t, i] <- plogis(MAX)
-        H[[i]] <- addHin(d2q(-Xt), d2q(-atilde), H[[i]])
-      }
-      At[p+t, i] <- atilde
-      # V <- scdd(Hi)[["output"]]
-      # if(nrow(V) == 0) stop("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
-      # Vertices[[i]] <- V
-    }
+
+    Points <- lapply(H, function(Hi){
+      V <- q2d(scdd(Hi)[["output"]])
+      V[isone(V[, 2L]), idx, drop = FALSE]
+    })
+    L <- loop1(H, Points, yK[t], Xt)
+    H <- L[["H"]]
+    At[p+t, ] <- L[["At"]]
+    weight[t, ] <- L[["weight"]]
+
+    # for(i in 1L:N){
+    #   V <- q2d(scdd(H[[i]])[["output"]])
+    #   points <- V[isone(V[, 2L]), idx, drop = FALSE]
+    #   if(yK[t] == 0L){
+    #     MIN <- min(points %*% Xt)
+    #     atilde <- rtlogis2(MIN)
+    #     weight[t, i] <- 1 - plogis(MIN)
+    #     H[[i]] <- addHin(d2q(Xt), d2q(atilde), H[[i]])
+    #   }else{ # yK[t] = 1L
+    #     MAX <- max(points %*% Xt)
+    #     atilde <- rtlogis1(MAX)
+    #     weight[t, i] <- plogis(MAX)
+    #     H[[i]] <- addHin(d2q(-Xt), d2q(-atilde), H[[i]])
+    #   }
+    #   At[p+t, i] <- atilde
+    #   # V <- scdd(Hi)[["output"]]
+    #   # if(nrow(V) == 0) stop("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+    #   # Vertices[[i]] <- V
+    # }
     WT <- apply(weight, 2L, prod)
     WTnorm <- WT / sum(WT)
     ESS[p+t] <- 1 / sum(WTnorm*WTnorm)

@@ -21,3 +21,7 @@ rcd <- function(n, P, b) {
     .Call('_gfilogisreg_rcd', PACKAGE = 'gfilogisreg', n, P, b)
 }
 
+loop1 <- function(H, Points, y, Xt) {
+    .Call('_gfilogisreg_loop1', PACKAGE = 'gfilogisreg', H, Points, y, Xt)
+}
+

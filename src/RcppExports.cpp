@@ -70,6 +70,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// loop1
+Rcpp::List loop1(Rcpp::List H, const Rcpp::List Points, const int y, const arma::colvec& Xt);
+RcppExport SEXP _gfilogisreg_loop1(SEXP HSEXP, SEXP PointsSEXP, SEXP ySEXP, SEXP XtSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type H(HSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type Points(PointsSEXP);
+    Rcpp::traits::input_parameter< const int >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const arma::colvec& >::type Xt(XtSEXP);
+    rcpp_result_gen = Rcpp::wrap(loop1(H, Points, y, Xt));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_gfilogisreg_get_umax", (DL_FUNC) &_gfilogisreg_get_umax, 2},
@@ -77,6 +91,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gfilogisreg_get_vmin", (DL_FUNC) &_gfilogisreg_get_vmin, 3},
     {"_gfilogisreg_get_bounds", (DL_FUNC) &_gfilogisreg_get_bounds, 2},
     {"_gfilogisreg_rcd", (DL_FUNC) &_gfilogisreg_rcd, 3},
+    {"_gfilogisreg_loop1", (DL_FUNC) &_gfilogisreg_loop1, 4},
     {NULL, NULL, 0}
 };
 
