@@ -8,43 +8,6 @@ namespace mp = boost::multiprecision;
 // [[Rcpp::depends(roptim)]]
 // [[Rcpp::depends(BH)]]
 
-std::string scalar2q(double x) {
-  mp::mpq_rational q(x);
-  return q.convert_to<std::string>();
-}
-
-Rcpp::CharacterVector vector2q(arma::colvec& x) {
-  Rcpp::CharacterVector out(x.size());
-  for(auto i = 0; i < x.size(); i++) {
-    mp::mpq_rational q(x(i));
-    out(i) = q.convert_to<std::string>();
-  }
-  return out;
-}
-
-Rcpp::CharacterVector newColumn(arma::colvec& Xt,
-                                double atilde,
-                                const bool yzero) {
-  if(yzero) {
-    Xt *= -1;
-  } else {
-    atilde *= -1;
-  }
-  arma::colvec head = {0.0, atilde};
-  arma::colvec newcol = arma::join_vert(head, Xt);
-  return vector2q(newcol);
-}  // add column then transpose:
-
-Rcpp::CharacterMatrix addHin(Rcpp::CharacterMatrix H,
-                             arma::colvec& Xt,
-                             double atilde,
-                             const bool yzero) {
-  Rcpp::CharacterMatrix Ht = Rcpp::transpose(H);
-  Rcpp::CharacterVector newcol = newColumn(Xt, atilde, yzero);
-  Rcpp::CharacterMatrix Hnew = Rcpp::cbind(Ht, newcol);
-  return Rcpp::transpose(Hnew);
-}
-
 std::vector<size_t> CantorExpansion(size_t n, std::vector<size_t> s) {
   std::vector<size_t> out(s.size());
   std::vector<size_t>::iterator it;
@@ -364,7 +327,7 @@ double qlogis(double u) {
 
 double MachineEps = std::numeric_limits<double>::epsilon();
 
-double rlogis1(double x) {
+double rtlogis1(double x) {
   double b = plogis(x);
   if(b <= MachineEps) {
     return x;
@@ -373,11 +336,83 @@ double rlogis1(double x) {
   return qlogis(ru(generator));
 }
 
-double rlogis2(double x) {
+double rtlogis2(double x) {
   double a = plogis(x);
   if(a == 1) {
     return x;
   }
   std::uniform_real_distribution<double> ru(a, 1);
   return qlogis(ru(generator));
+}
+
+std::string scalar2q(double x) {
+  mp::mpq_rational q(x);
+  return q.convert_to<std::string>();
+}
+
+Rcpp::CharacterVector vector2q(arma::colvec& x) {
+  Rcpp::CharacterVector out(x.size());
+  for(auto i = 0; i < x.size(); i++) {
+    mp::mpq_rational q(x(i));
+    out(i) = q.convert_to<std::string>();
+  }
+  return out;
+}
+
+Rcpp::CharacterVector newColumn(const arma::colvec& Xt,
+                                double atilde,
+                                const bool yzero) {
+  arma::colvec head;
+  arma::colvec newcol;
+  if(yzero) {
+    head = {0.0, atilde};
+    newcol = arma::join_vert(head, -Xt);
+  } else {
+    head = {0.0, -atilde};
+    newcol = arma::join_vert(head, Xt);
+  }
+  return vector2q(newcol);
+}  // add column then transpose:
+
+Rcpp::CharacterMatrix addHin(Rcpp::CharacterMatrix H,
+                             const arma::colvec& Xt,
+                             double atilde,
+                             const bool yzero) {
+  Rcpp::CharacterMatrix Ht = Rcpp::transpose(H);
+  Rcpp::CharacterVector newcol = newColumn(Xt, atilde, yzero);
+  Rcpp::CharacterMatrix Hnew = Rcpp::transpose(Rcpp::cbind(Ht, newcol));
+  Hnew.attr("representation") = "H";
+  return Hnew;
+}
+
+// [[Rcpp::export]]
+Rcpp::List loop1(Rcpp::List H,
+                 const Rcpp::List Points,
+                 const int y,
+                 const arma::colvec& Xt) {
+  Rcpp::NumericVector weight(H.size());
+  Rcpp::NumericVector At(H.size());
+  if(y == 0) {
+    for(auto i = 0; i < H.size(); i++) {
+      arma::mat points = Points[i];
+      double MIN = arma::min(points * Xt);
+      double atilde = rtlogis2(MIN);
+      At(i) = atilde;
+      weight(i) = 1.0 - plogis(MIN);
+      Rcpp::CharacterMatrix Hi = H[i];
+      H[i] = addHin(Hi, Xt, atilde, true);
+    }
+  } else {
+    for(auto i = 0; i < H.size(); i++) {
+      arma::mat points = Points[i];
+      double MAX = arma::max(points * Xt);
+      double atilde = rtlogis1(MAX);
+      At(i) = atilde;
+      weight(i) = plogis(MAX);
+      Rcpp::CharacterMatrix Hi = H[i];
+      H[i] = addHin(Hi, Xt, atilde, false);
+    }
+  }
+  return Rcpp::List::create(Rcpp::Named("H") = H, Rcpp::Named("At") = At,
+                            Rcpp::Named("weight") = weight);
 }
