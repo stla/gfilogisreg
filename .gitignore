@@ -39,3 +39,8 @@ vignettes/*.pdf
 .Renviron
 .Rproj.user
 inst/doc
+
+# Rcpp
+src/*.o
+src/*.so
+src/*.dll
