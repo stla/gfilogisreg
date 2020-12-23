@@ -180,7 +180,7 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
 double get_vmin_i(
     const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
 ) {
-  double eps = sqrt(std::numeric_limits<double>::epsilon());
+  double eps = sqrt(std::numeric_limits<double>::epsilon()) / 3.0;
   uLogf1 ulogf1;
   ulogf1.P = P;
   ulogf1.b = b;
@@ -224,7 +224,7 @@ arma::vec get_vmin(
 double get_vmax_i(
     const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu
 ) {
-  double eps = sqrt(std::numeric_limits<double>::epsilon());
+  double eps = sqrt(std::numeric_limits<double>::epsilon()) / 3.0;
   uLogf2 ulogf2;
   ulogf2.P = P;
   ulogf2.b = b;
@@ -283,6 +283,7 @@ Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b){
 std::default_random_engine generator;
 std::uniform_real_distribution<double> runif(0.0, 1.0);
 
+// [[Rcpp::export]]
 arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b){
   //, const size_t seed){
   //  std::default_random_engine generator(seed);
@@ -305,12 +306,13 @@ arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b){
     bool test = arma::all(x > 0.0) && arma::all(x < 1.0) &&
       (d+2) * log(u) < 2.0 * log_f(x, P, b);
     if(test){
-      tout.col(k) = x;
+      tout.col(k) = logit(x);
       k++;
     }
   }
   return tout.t();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 double plogis(double x){
@@ -340,12 +342,6 @@ double rlogis2(double x){
   std::uniform_real_distribution<double> ru(a, 1);
   return qlogis(ru(generator));
 }
-
-
-
-
-
-
 
 
 
