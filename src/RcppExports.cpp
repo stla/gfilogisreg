@@ -7,14 +7,15 @@
 using namespace Rcpp;
 
 // get_umax
-Rcpp::List get_umax(const arma::mat& P, const arma::vec& b);
-RcppExport SEXP _gfilogisreg_get_umax(SEXP PSEXP, SEXP bSEXP) {
+Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, const arma::mat& inits);
+RcppExport SEXP _gfilogisreg_get_umax(SEXP PSEXP, SEXP bSEXP, SEXP initsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_umax(P, b));
+    Rcpp::traits::input_parameter< const arma::mat& >::type inits(initsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_umax(P, b, inits));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -46,71 +47,54 @@ BEGIN_RCPP
 END_RCPP
 }
 // get_bounds
-Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b);
-RcppExport SEXP _gfilogisreg_get_bounds(SEXP PSEXP, SEXP bSEXP) {
+Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, const arma::mat& inits);
+RcppExport SEXP _gfilogisreg_get_bounds(SEXP PSEXP, SEXP bSEXP, SEXP initsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_bounds(P, b));
+    Rcpp::traits::input_parameter< const arma::mat& >::type inits(initsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_bounds(P, b, inits));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcd
-arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b);
-RcppExport SEXP _gfilogisreg_rcd(SEXP nSEXP, SEXP PSEXP, SEXP bSEXP) {
+arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b, const arma::mat& inits);
+RcppExport SEXP _gfilogisreg_rcd(SEXP nSEXP, SEXP PSEXP, SEXP bSEXP, SEXP initsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const size_t >::type n(nSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcd(n, P, b));
+    Rcpp::traits::input_parameter< const arma::mat& >::type inits(initsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcd(n, P, b, inits));
     return rcpp_result_gen;
 END_RCPP
 }
 // loop1
-Rcpp::List loop1(Rcpp::CharacterMatrix H, const Rcpp::IntegerVector hbreaks, const arma::mat& Points, const Rcpp::IntegerVector pbreaks, const int y, const arma::colvec& Xt);
-RcppExport SEXP _gfilogisreg_loop1(SEXP HSEXP, SEXP hbreaksSEXP, SEXP PointsSEXP, SEXP pbreaksSEXP, SEXP ySEXP, SEXP XtSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::CharacterMatrix >::type H(HSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type hbreaks(hbreaksSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type Points(PointsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type pbreaks(pbreaksSEXP);
-    Rcpp::traits::input_parameter< const int >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const arma::colvec& >::type Xt(XtSEXP);
-    rcpp_result_gen = Rcpp::wrap(loop1(H, hbreaks, Points, pbreaks, y, Xt));
-    return rcpp_result_gen;
-END_RCPP
-}
-// lloop1
-Rcpp::List lloop1(Rcpp::List H, const Rcpp::IntegerVector hbreaks, const Rcpp::List Points, const Rcpp::IntegerVector pbreaks, const int y, const arma::colvec& Xt);
-RcppExport SEXP _gfilogisreg_lloop1(SEXP HSEXP, SEXP hbreaksSEXP, SEXP PointsSEXP, SEXP pbreaksSEXP, SEXP ySEXP, SEXP XtSEXP) {
+Rcpp::List loop1(Rcpp::List H, const Rcpp::List Points, const int y, const arma::colvec& Xt);
+RcppExport SEXP _gfilogisreg_loop1(SEXP HSEXP, SEXP PointsSEXP, SEXP ySEXP, SEXP XtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< Rcpp::List >::type H(HSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type hbreaks(hbreaksSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List >::type Points(PointsSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::IntegerVector >::type pbreaks(pbreaksSEXP);
     Rcpp::traits::input_parameter< const int >::type y(ySEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type Xt(XtSEXP);
-    rcpp_result_gen = Rcpp::wrap(lloop1(H, hbreaks, Points, pbreaks, y, Xt));
+    rcpp_result_gen = Rcpp::wrap(loop1(H, Points, y, Xt));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gfilogisreg_get_umax", (DL_FUNC) &_gfilogisreg_get_umax, 2},
+    {"_gfilogisreg_get_umax", (DL_FUNC) &_gfilogisreg_get_umax, 3},
     {"_gfilogisreg_get_vmin_i", (DL_FUNC) &_gfilogisreg_get_vmin_i, 4},
     {"_gfilogisreg_get_vmin", (DL_FUNC) &_gfilogisreg_get_vmin, 3},
-    {"_gfilogisreg_get_bounds", (DL_FUNC) &_gfilogisreg_get_bounds, 2},
-    {"_gfilogisreg_rcd", (DL_FUNC) &_gfilogisreg_rcd, 3},
-    {"_gfilogisreg_loop1", (DL_FUNC) &_gfilogisreg_loop1, 6},
-    {"_gfilogisreg_lloop1", (DL_FUNC) &_gfilogisreg_lloop1, 6},
+    {"_gfilogisreg_get_bounds", (DL_FUNC) &_gfilogisreg_get_bounds, 3},
+    {"_gfilogisreg_rcd", (DL_FUNC) &_gfilogisreg_rcd, 4},
+    {"_gfilogisreg_loop1", (DL_FUNC) &_gfilogisreg_loop1, 4},
     {NULL, NULL, 0}
 };
 

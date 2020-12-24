@@ -4,14 +4,11 @@
 using namespace roptim;
 namespace mp = boost::multiprecision;
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::depends(roptim)]]
 // [[Rcpp::depends(BH)]]
 
+/*
 std::vector<size_t> CantorExpansion(size_t n, std::vector<size_t> s) {
   std::vector<size_t> out(s.size());
   std::vector<size_t>::iterator it;
@@ -44,6 +41,7 @@ arma::mat grid(const size_t d) {
   }
   return out;
 }
+*/
 
 arma::vec logit(const arma::vec& u) {
   return arma::log(u / (1.0 - u));
@@ -164,9 +162,11 @@ Rcpp::List get_umax0(const arma::mat& P, const arma::vec& b, arma::vec init) {
 }
 
 // [[Rcpp::export]]
-Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
+Rcpp::List get_umax(const arma::mat& P,
+                    const arma::vec& b,
+                    const arma::mat& inits) {
   const size_t d = P.n_cols;
-  const arma::mat inits = grid(d);
+  // const arma::mat inits = grid(d);
   const size_t n = inits.n_cols;
   std::vector<arma::vec> pars(n);
   arma::vec values(n);
@@ -273,8 +273,10 @@ arma::vec get_vmax(const arma::mat& P,
 }
 
 // [[Rcpp::export]]
-Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b) {
-  Rcpp::List L = get_umax(P, b);
+Rcpp::List get_bounds(const arma::mat& P,
+                      const arma::vec& b,
+                      const arma::mat& inits) {
+  Rcpp::List L = get_umax(P, b, inits);
   arma::vec mu = L["mu"];
   double umax = L["umax"];
   arma::vec vmin = get_vmin(P, b, mu);
@@ -291,13 +293,16 @@ std::default_random_engine generator;
 std::uniform_real_distribution<double> runif(0.0, 1.0);
 
 // [[Rcpp::export]]
-arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b) {
+arma::mat rcd(const size_t n,
+              const arma::mat& P,
+              const arma::vec& b,
+              const arma::mat& inits) {
   //, const size_t seed){
   //  std::default_random_engine generator(seed);
   //  std::uniform_real_distribution<double> runif(0.0, 1.0);
   const size_t d = P.n_cols;
   arma::mat tout(d, n);
-  const Rcpp::List bounds = get_bounds(P, b);
+  const Rcpp::List bounds = get_bounds(P, b, inits);
   const double umax = bounds["umax"];
   const arma::vec mu = bounds["mu"];
   const arma::vec vmin = bounds["vmin"];
@@ -389,7 +394,7 @@ Rcpp::CharacterMatrix addHin(Rcpp::CharacterMatrix H,
   return Hnew;
 }
 
-// [[Rcpp::export]]
+/*
 Rcpp::List loop1(Rcpp::CharacterMatrix H,
                  const Rcpp::IntegerVector hbreaks,
                  const arma::mat& Points,
@@ -425,7 +430,8 @@ Rcpp::List loop1(Rcpp::CharacterMatrix H,
       weight(i) = 1.0 - plogis(MIN);
 #pragma omp critical
 {
-      Hnew[i] = addHin(H(Rcpp::Range(hbreaks(i), hbreaks(i + 1)-1), Rcpp::Range(0, p)), Xt, atilde, true);
+      Hnew[i] = addHin(H(Rcpp::Range(hbreaks(i), hbreaks(i + 1)-1),
+Rcpp::Range(0, p)), Xt, atilde, true);
 }
     }
   } else {
@@ -445,72 +451,48 @@ Rcpp::List loop1(Rcpp::CharacterMatrix H,
       weight(i) = plogis(MAX);
 #pragma omp critical
 {
-      Hnew[i] = addHin(H(Rcpp::Range(hbreaks(i), hbreaks(i + 1)-1), Rcpp::Range(0, p)), Xt, atilde, false);
+      Hnew[i] = addHin(H(Rcpp::Range(hbreaks(i), hbreaks(i + 1)-1),
+Rcpp::Range(0, p)), Xt, atilde, false);
 }
     }
   }
   return Rcpp::List::create(Rcpp::Named("H") = Hnew, Rcpp::Named("At") = At,
                             Rcpp::Named("weight") = weight);
 }
-
+*/
 
 // [[Rcpp::export]]
-Rcpp::List lloop1(Rcpp::List H,
-                 const Rcpp::IntegerVector hbreaks,
+Rcpp::List loop1(Rcpp::List H,
                  const Rcpp::List Points,
-                 const Rcpp::IntegerVector pbreaks,
                  const int y,
                  const arma::colvec& Xt) {
-  const size_t nthreads = 4;
-  const size_t seed = 666;
-  std::vector<std::default_random_engine> generators(nthreads);
-  for(size_t t = 0; t < nthreads; t++) {
-    std::default_random_engine gen(seed + (t + 1) * 2000000);
-    generators[t] = gen;
-  }
-  const size_t N = hbreaks.size() - 1;
+  // const size_t seed = 666;
+  // std::vector<std::default_random_engine> generators(nthreads);
+  // for(size_t t = 0; t < nthreads; t++) {
+  //  std::default_random_engine gen(seed + (t + 1) * 2000000);
+  //  generators[t] = gen;
+  //}
+  std::default_random_engine gnrtr;
+  const size_t N = H.size();
   Rcpp::NumericVector weight(N);
   Rcpp::NumericVector At(N);
-  Rcpp::List Hnew(N);
   if(y == 0) {
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(nthreads)
-#endif
     for(auto i = 0; i < N; i++) {
-#ifdef _OPENMP
-      const unsigned thread = omp_get_thread_num();
-#else
-      const unsigned thread = 0;
-#endif
       arma::mat points = Points[i];
       double MIN = arma::min(points * Xt);
-      double atilde = rtlogis2(MIN, generators[thread]);
+      double atilde = rtlogis2(MIN, gnrtr);
       At(i) = atilde;
       weight(i) = 1.0 - plogis(MIN);
-#pragma omp critical
-{
-  H[i] = addHin(H[i], Xt, atilde, true);
-}
+      H[i] = addHin(H[i], Xt, atilde, true);
     }
   } else {
-#ifdef _OPENMP
-#pragma omp parallel for num_threads(nthreads)
-#endif
     for(auto i = 0; i < N; i++) {
-#ifdef _OPENMP
-      const unsigned thread = omp_get_thread_num();
-#else
-      const unsigned thread = 0;
-#endif
       arma::mat points = Points[i];
       double MAX = arma::max(points * Xt);
-      double atilde = rtlogis1(MAX, generators[thread]);
+      double atilde = rtlogis1(MAX, gnrtr);
       At(i) = atilde;
       weight(i) = plogis(MAX);
-#pragma omp critical
-{
-  H[i] = addHin(H[i], Xt, atilde, false);
-}
+      H[i] = addHin(H[i], Xt, atilde, false);
     }
   }
   return Rcpp::List::create(Rcpp::Named("H") = H, Rcpp::Named("At") = At,

@@ -32,6 +32,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
   n <- length(y)
   p <- ncol(X)
   stopifnot(p >= 2)
+  grid <- t(as.matrix(expand.grid(rep(list(c(0.01, 0.5, 0.99)), p))))
   idx <- 3L:(2L+p)
   Beta <- matrix(NA_real_, nrow = N, ncol = p)
   colnames(Beta) <- colnames(X)
@@ -83,10 +84,10 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
       V <- q2d(scdd(Hi)[["output"]])
       V[isone(V[, 2L]), idx, drop = FALSE]
     })
-    pbreaks <- cumsum(c(1L, vapply(Points, nrow, integer(1L)))) - 1L
-    #Points <- do.call(rbind, Points)
-    hbreaks <- cumsum(c(1L, vapply(H, nrow, integer(1L)))) - 1L
-    L <- lloop1(H, hbreaks, Points, pbreaks, yK[t], Xt)
+    # pbreaks <- cumsum(c(1L, vapply(Points, nrow, integer(1L)))) - 1L
+    # #Points <- do.call(rbind, Points)
+    # hbreaks <- cumsum(c(1L, vapply(H, nrow, integer(1L)))) - 1L
+    L <- loop1(H, Points, yK[t], Xt)
     # L <- loop1(do.call(rbind, H), hbreaks, Points, pbreaks, yK[t], Xt)
     H <- L[["H"]]
     At[p+t, ] <- L[["At"]]
@@ -111,6 +112,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
     #   # if(nrow(V) == 0) stop("OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
     #   # Vertices[[i]] <- V
     # }
+
     WT <- apply(weight, 2L, prod)
     WTnorm <- WT / sum(WT)
     ESS[p+t] <- 1 / sum(WTnorm*WTnorm)
@@ -140,7 +142,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
             # assign("B", B, envir = .GlobalEnv)
             # #
             # stop()
-            BTILDES <- rcd(ncopies-1L, P, b)#rcd(ncopies-1L, P, b, B)
+            BTILDES <- rcd(ncopies-1L, P, b, grid)#rcd(ncopies-1L, P, b, B)
             points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
             rays <- VT[!isone(VT[, 2L]), idx, drop = FALSE]
             for(j in 2L:ncopies){
