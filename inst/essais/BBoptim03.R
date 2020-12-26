@@ -28,14 +28,50 @@ f <- function(uv){
 #   vecx <- P %*% h(uv) + b
 #   dh(uv[i]) * sum(P[, i] * dldlogis(vecx))
 # }
-gr_i <- function(uv, i){
+grf_i <- function(uv, i){
   vecx <- P %*% h(uv) + b
   prod(dlogis(vecx)) * dh(uv[i]) * sum(P[, i] * dldlogis(vecx))
 }
-gr <- function(uv){
-  vapply(1L:d, function(i) gr_i(uv, i), numeric(1L))
+grf <- function(uv){
+  vapply(1L:d, function(i) grf_i(uv, i), numeric(1L))
+}
+grxf_i <- function(uv, i, j, mu){
+  vecx <- P %*% h(uv) + b
+  if(i == j){
+    prod(dlogis(vecx)) *
+      (dh(uv[i]) * (sum(P[, i] * dldlogis(vecx)) * (h(uv[i]) - mu[i]) + 1))
+  }else{
+    grf_i(uv, i) * (h(uv[j]) - mu[j])
+  }
+}
+grxf <- function(uv, mu, j){
+  vapply(1L:d, function(i) grxf_i(uv, i, j, mu), numeric(1L))
 }
 
+# umax ####
+opt <- optim(
+  par = rep(0.5, d),
+  fn = f,
+  gr = grf,
+  lower = rep(0, d),
+  upper = rep(1, d),
+  control = list(fnscale = -1, factr = 1),
+  method = "L-BFGS-B"
+)
+mu <- h(opt[["par"]])
+umax <- sqrt(opt[["value"]])
+
+# vmin i
+i <- 2
+BBoptim(
+  par = `[<-`(rep(0.5, d), i, g(mu[i])/2),
+  fn = function(uv) f(uv) * (h(uv[i]) - mu[i]),
+  gr = function(uv) grxf(uv, mu, i),
+  lower = rep(0, d),
+  upper = `[<-`(rep(1, d), i, g(mu[i]))
+  # control = list(factr = 1),
+  # method = "L-BFGS-B"
+)
 
 
 
