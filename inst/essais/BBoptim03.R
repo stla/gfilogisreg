@@ -64,10 +64,10 @@ opt <- optim(
   method = "L-BFGS-B"
 )
 mu <- h(opt[["par"]])
-umax <- sqrt(opt[["value"]])
+umax <- opt[["value"]]^(2/(d+2))
 
 # vmin i
-i <- 2
+i <- 1
 BBoptim(
   par = `[<-`(rep(0.5, d), i, g(mu[i])/2),
   fn = function(uv) f(uv)^(1/(d+2)) * (h(uv[i]) - mu[i]),
@@ -87,6 +87,26 @@ optim(
   method = "L-BFGS-B"
 )
 
+# vmax i
+i <- 1
+BBoptim(
+  par = `[<-`(rep(0.5, d), i, (g(mu[i])+1)/2),
+  fn = function(uv) f(uv)^(1/(d+2)) * (h(uv[i]) - mu[i]),
+  gr = function(uv) grxf(uv, mu, i),
+  lower = `[<-`(rep(0, d), i, g(mu[i])),
+  upper = rep(1, d),
+  control = list(maximize = TRUE),
+  # method = "L-BFGS-B"
+)
+optim(
+  par = `[<-`(rep(0.5, d), i, (g(mu[i])+1)/2),
+  fn = function(uv) f(uv)^(1/(d+2)) * (h(uv[i]) - mu[i]),
+  gr = function(uv) grxf(uv, mu, i),
+  lower = `[<-`(rep(0, d), i, g(mu[i])),
+  upper = rep(1, d),
+  control = list(fnscale = -1, factr = 1),
+  method = "L-BFGS-B"
+)
 
 
 
