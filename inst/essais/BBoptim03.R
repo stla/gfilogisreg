@@ -36,12 +36,17 @@ grf <- function(uv){
   vapply(1L:d, function(i) grf_i(uv, i), numeric(1L))
 }
 grxf_i <- function(uv, i, j, mu){
+  d <- length(mu)
+  alpha <- 1 / (d + 2)
   vecx <- P %*% h(uv) + b
+  dfalpha <- alpha * prod(dlogis(vecx))^alpha * dh(uv[i]) * sum(P[, i] * dldlogis(vecx))# alpha * grf_i(uv, i) * f(uv)^(alpha-1)
+  # vecx <- P %*% h(uv) + b
   if(i == j){
-    prod(dlogis(vecx)) *
-      (dh(uv[i]) * (sum(P[, i] * dldlogis(vecx)) * (h(uv[i]) - mu[i]) + 1))
+    dfalpha  * (h(uv[i]) - mu[i]) + f(uv)^alpha * dh(uv[i])
+    # prod(dlogis(vecx)) *
+    #   (dh(uv[i]) * (sum(P[, i] * dldlogis(vecx)) * (h(uv[i]) - mu[i]) + 1))
   }else{
-    grf_i(uv, i) * (h(uv[j]) - mu[j])
+    dfalpha * (h(uv[j]) - mu[j])
   }
 }
 grxf <- function(uv, mu, j){
@@ -65,12 +70,21 @@ umax <- sqrt(opt[["value"]])
 i <- 2
 BBoptim(
   par = `[<-`(rep(0.5, d), i, g(mu[i])/2),
-  fn = function(uv) f(uv) * (h(uv[i]) - mu[i]),
+  fn = function(uv) f(uv)^(1/(d+2)) * (h(uv[i]) - mu[i]),
   gr = function(uv) grxf(uv, mu, i),
   lower = rep(0, d),
   upper = `[<-`(rep(1, d), i, g(mu[i]))
   # control = list(factr = 1),
   # method = "L-BFGS-B"
+)
+optim(
+  par = `[<-`(rep(0.5, d), i, g(mu[i])/2),
+  fn = function(uv) f(uv)^(1/(d+2)) * (h(uv[i]) - mu[i]),
+  gr = function(uv) grxf(uv, mu, i),
+  lower = rep(0, d),
+  upper = `[<-`(rep(1, d), i, g(mu[i])),
+  control = list(factr = 1),
+  method = "L-BFGS-B"
 )
 
 
