@@ -1,6 +1,4 @@
 #include <boost/multiprecision/gmp.hpp>
-#include <boost/math/constants/constants.hpp>
-#include <boost/math/special_functions/cos_pi.hpp>
 #include "RcppArmadillo.h"
 #include "roptim.h"
 using namespace roptim;
@@ -10,72 +8,86 @@ namespace mp = boost::multiprecision;
 // [[Rcpp::depends(roptim)]]
 // [[Rcpp::depends(BH)]]
 
-const double pi = boost::math::constants::pi<double>();
-
-double powint(double base, size_t exp) {
-  double result = 1.0;
-  while(exp) {
-    if(exp & 1)
-      result *= base;
-    exp >>= 1;
-    base *= base;
+/*
+std::vector<size_t> CantorExpansion(size_t n, std::vector<size_t> s) {
+  std::vector<size_t> out(s.size());
+  std::vector<size_t>::iterator it;
+  it = s.begin();
+  it = s.insert(it, 1);
+  size_t G[s.size()];
+  std::partial_sum(s.begin(), s.end(), G, std::multiplies<size_t>());
+  size_t k;
+  while(n > 0) {
+    k = 1;
+    while(G[k] <= n) {
+      k++;
+    }
+    out[k - 1] = n / G[k - 1];
+    n = n % G[k - 1];
   }
-  return result;
+  return out;
 }
 
-arma::vec tan01(const arma::vec& u) {
-  return arma::tan(pi * (u-0.5));
+arma::mat grid(const size_t d) {
+  std::array<double, 3> x = {0.01, 0.5, 0.99};
+  size_t p = pow((size_t)3, d);
+  arma::mat out(d, p);
+  std::vector<size_t> threes(d, 3);
+  for(size_t n = 0; n < p; n++) {
+    std::vector<size_t> indices = CantorExpansion(n, threes);
+    for(size_t i = 0; i < d; i++) {
+      out.at(i, n) = x[indices[i]];
+    }
+  }
+  return out;
+}
+*/
+
+arma::vec logit(const arma::vec& u) {
+  return arma::log(u / (1.0 - u));
 }
 
-double tan01scalar(double u){
-  return tan(pi * (u-0.5));
+double dlogit(double u) {
+  return 1.0 / (u * (1.0 - u));
 }
 
-double atan01(double x) {
-  return atan(x)/pi + 0.5;
+arma::vec ldlogit(const arma::vec& u) {
+  return -arma::log(u % (1.0 - u));
 }
 
-double dtan01(double u) {
-  const double x = boost::math::cos_pi(u-0.5);
-  return pi / (x*x);
-}
-
-arma::vec dlogis(const arma::vec& x) {
-  const arma::vec expx = arma::exp(x);
-  const arma::vec one_plus_expx = 1.0 + expx;
-  return expx / (one_plus_expx % one_plus_expx);
+arma::vec ldlogis(const arma::vec& x) {
+  return x - 2.0 * arma::log1p(arma::exp(x));
 }
 
 arma::vec dldlogis(const arma::vec& x) {
   return 1.0 - 2.0 / (1.0 + arma::exp(-x));
 }
 
-double f(const arma::vec& u, const arma::mat& P, const arma::vec& b) {
-  const arma::vec x = P * tan01(u) + b;
-  return arma::prod(dlogis(x));
+double log_f(const arma::vec& u, const arma::mat& P, const arma::vec& b) {
+  const arma::vec x = P * logit(u) + b;
+  return arma::sum(ldlogis(x)) + arma::sum(ldlogit(u));
 }
 
-double df(const double ui, const arma::vec& Pi, const double y1, const arma::vec& y2) {
-  return y1 * dtan01(ui) * arma::sum(Pi % y2);
+double dlog_f(const double ui, const arma::vec& Pi, const arma::vec& y) {
+  return dlogit(ui) * arma::sum(Pi % y) + (2.0 * ui - 1.0) / (ui * (1.0 - ui));
 }
 
-class F : public Functor {
+class Logf : public Functor {
  public:
   arma::mat P;
   arma::vec b;
-  double operator()(const arma::vec& u) override { return f(u, P, b); }
+  double operator()(const arma::vec& u) override { return log_f(u, P, b); }
   void Gradient(const arma::vec& u, arma::vec& gr) override {
     const size_t d = P.n_cols;
     gr = arma::zeros<arma::vec>(d);
-    const double y1 = f(u, P, b);
-    const arma::vec y2 = dldlogis(P * tan01(u) + b);
+    const arma::vec y = dldlogis(P * logit(u) + b);
     for(size_t i = 0; i < d; i++) {
-      gr(i) = df(u.at(i), P.col(i), y1, y2);
+      gr(i) = dlog_f(u[i], P.col(i), y);
     }
   }
 };
 
-class xF : public Functor {
+class uLogf1 : public Functor {
  public:
   arma::mat P;
   arma::vec b;
@@ -83,19 +95,41 @@ class xF : public Functor {
   size_t j;
   double operator()(const arma::vec& u) override {
     const size_t d = P.n_cols;
-    return f(u, P, b) * powint(tan01scalar(u.at(j)) - mu.at(j), d+2);
+    return -log_f(u, P, b) - (d + 2) * log(mu[j] - u.at(j));
   }
   void Gradient(const arma::vec& u, arma::vec& gr) override {
     const size_t d = P.n_cols;
     gr = arma::zeros<arma::vec>(d);
-    const double y1 = f(u, P, b);
-    const arma::vec y2 = dldlogis(P * tan01(u) + b);
-    const double diff = tan01scalar(u.at(j)) - mu.at(j);
+    const arma::vec y = dldlogis(P * logit(u) + b);
     for(size_t i = 0; i < d; i++) {
       if(i == j) {
-        gr(i) = powint(diff, d+1) * (diff * df(u.at(i), P.col(i), y1, y2) + (d+2) * y1);
+        gr(i) = -dlog_f(u[i], P.col(i), y) + (d + 2) / (mu[i] - u.at(i));
       } else {
-        gr(i) = df(u.at(i), P.col(i), y1, y2) * powint(diff, d+2);
+        gr(i) = -dlog_f(u[i], P.col(i), y);
+      }
+    }
+  }
+};
+
+class uLogf2 : public Functor {
+ public:
+  arma::mat P;
+  arma::vec b;
+  arma::vec mu;
+  size_t j;
+  double operator()(const arma::vec& u) override {
+    const size_t d = P.n_cols;
+    return log_f(u, P, b) + (d + 2) * log(u.at(j) - mu[j]);
+  }
+  void Gradient(const arma::vec& u, arma::vec& gr) override {
+    const size_t d = P.n_cols;
+    gr = arma::zeros<arma::vec>(d);
+    const arma::vec y = dldlogis(P * logit(u) + b);
+    for(size_t i = 0; i < d; i++) {
+      if(i == j) {
+        gr(i) = dlog_f(u[i], P.col(i), y) - (d + 2) / (mu[i] - u.at(i));
+      } else {
+        gr(i) = dlog_f(u[i], P.col(i), y);
       }
     }
   }
