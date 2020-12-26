@@ -1,6 +1,6 @@
-#include <boost/multiprecision/gmp.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/cos_pi.hpp>
+#include <boost/multiprecision/gmp.hpp>
 #include "RcppArmadillo.h"
 #include "roptim.h"
 using namespace roptim;
@@ -24,26 +24,28 @@ double powint(double base, size_t exp) {
 }
 
 arma::vec tan01(const arma::vec& u) {
-  return arma::tan(pi * (u-0.5));
+  return arma::tan(pi * (u - 0.5));
 }
 
-double tan01scalar(double u){
-  return tan(pi * (u-0.5));
+double tan01scalar(double u) {
+  return tan(pi * (u - 0.5));
 }
 
 double atan01(double x) {
-  return atan(x)/pi + 0.5;
+  return atan(x) / pi + 0.5;
 }
 
 double dtan01(double u) {
-  const double x = boost::math::cos_pi(u-0.5);
-  return pi / (x*x);
+  const double x = boost::math::cos_pi(u - 0.5);
+  return pi / (x * x);
 }
 
 arma::vec dlogis(const arma::vec& x) {
   const arma::vec expx = arma::exp(x);
   const arma::vec one_plus_expx = 1.0 + expx;
-  return expx / (one_plus_expx % one_plus_expx); // (1.0 / one_plus_expx) % (1.0 - 1.0 / one_plus_expx);
+  return expx /
+         (one_plus_expx % one_plus_expx);  // (1.0 / one_plus_expx) % (1.0 - 1.0
+                                           // / one_plus_expx);
 }
 
 arma::vec dldlogis(const arma::vec& x) {
@@ -55,11 +57,15 @@ double forig(const arma::vec& x, const arma::mat& P, const arma::vec& b) {
 }
 
 double f(const arma::vec& u, const arma::mat& P, const arma::vec& b) {
-  const arma::vec v = tan01(u);
-  return v.has_inf() ? 0.0 : arma::prod(dlogis(P * v + b));
+//  double result = arma::prod(dlogis(P * tan01(u) + b));
+//  return isnormal(result) ? result : 0.0;
+  return arma::prod(dlogis(P * tan01(u) + b));
 }
 
-double df(const double ui, const arma::vec& Pi, const double y1, const arma::vec& y2) {
+double df(const double ui,
+          const arma::vec& Pi,
+          const double y1,
+          const arma::vec& y2) {
   return y1 * dtan01(ui) * arma::sum(Pi % y2);
 }
 
@@ -79,33 +85,6 @@ class F : public Functor {
   }
 };
 
-class xF1 : public Functor {
- public:
-  arma::mat P;
-  arma::vec b;
-  arma::vec mu;
-  size_t j;
-  double operator()(const arma::vec& u) override {
-    const size_t d = P.n_cols;
-    return -f(u, P, b) * powint(tan01scalar(mu.at(j) - u.at(j)), d+2);
-  }
-  void Gradient(const arma::vec& u, arma::vec& gr) override {
-    const size_t d = P.n_cols;
-    gr = arma::zeros<arma::vec>(d);
-    const double y1 = f(u, P, b);
-    const arma::vec y2 = dldlogis(P * tan01(u) + b);
-    const double diff = mu.at(j) - tan01scalar(u.at(j));
-    for(size_t i = 0; i < d; i++) {
-      if(i == j) {
-        gr(i) = - powint(diff, d+1) *
-          (diff * y1 * (dtan01(u.at(i)) * arma::sum(P.col(i) % y2) + d + 2.0));
-      } else {
-        gr(i) = - df(u.at(i), P.col(i), y1, y2) * powint(diff, d+2);
-      }
-    }
-  }
-};
-
 // [[Rcpp::export]]
 void xf2(arma::vec& u, arma::mat& P, arma::vec& b, arma::vec& mu, size_t j){
   const size_t d = P.n_cols;
@@ -114,35 +93,37 @@ void xf2(arma::vec& u, arma::mat& P, arma::vec& b, arma::vec& mu, size_t j){
   Rcpp::Rcout << x << "\n";
   Rcpp::Rcout << y1 << "\n";
   Rcpp::Rcout << pow(y1, 1.0/(d+2)) << "\n";
+  Rcpp::Rcout << 0.0 + pow(f(u, P, b), 1.0/(d+2)) * (tan01scalar(u.at(j)) - mu.at(j)) << "\n";
 }
 
-class xF2 : public Functor {
-public:
+class xF : public Functor {
+ public:
   arma::mat P;
   arma::vec b;
   arma::vec mu;
   size_t j;
   double operator()(const arma::vec& u) override {
     const size_t d = P.n_cols;
-    const double x = tan01scalar(u.at(j));
-    const double y1 = f(u, P, b);
-    return isnan(y1) ? 0.0 : pow(y1, 1.0/(d+2)) * (x - mu.at(j));
+    const double result = pow(f(u, P, b), 1.0 / (d + 2)) * (tan01scalar(u.at(j)) - mu.at(j));
+    return isnormal(result) ? result : 0.0;
   }
   void Gradient(const arma::vec& u, arma::vec& gr) override {
     const size_t d = P.n_cols;
-    const double alpha = 1.0 / (d+2);
+    const double alpha = 1.0 / (d + 2);
     gr = arma::zeros<arma::vec>(d);
-    const double y1 = f(u, P, b);
+    const double y1alpha = pow(f(u, P, b), alpha);
     const arma::vec y2 = dldlogis(P * tan01(u) + b);
-    // alpha * prod(dlogis(vecx))^alpha * dh(uv[i]) * sum(P[, i] * dldlogis(vecx))
+    // alpha * prod(dlogis(vecx))^alpha * dh(uv[i]) * sum(P[, i] *
+    // dldlogis(vecx))
     const double diff = tan01scalar(u.at(j)) - mu.at(j);
     for(size_t i = 0; i < d; i++) {
-      const double dfalpha =
-        alpha * pow(y1, alpha) * dtan01(u.at(i)) * arma::sum(P.col(i) % y2);
+      const double z = y1alpha * dtan01(u.at(i));
+//      const double dfalpha =
+//          alpha * z * arma::sum(P.col(i) % y2);
       if(i == j) {
-        gr(i) = dfalpha * diff + pow(y1, alpha) * dtan01(u.at(i));
+        gr(i) = z * (alpha * arma::sum(P.col(i) % y2) * diff + 1.0);
       } else {
-        gr(i) = dfalpha * diff;
+        gr(i) = alpha * z * arma::sum(P.col(i) % y2) * diff;
       }
     }
   }
@@ -170,22 +151,22 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
     Rcpp::Rcout << "-- umax -----------------------" << std::endl;
     opt.print();
   }
-  return Rcpp::List::create(Rcpp::Named("mu") = tan01(opt.par()),
-                            Rcpp::Named("umax") = pow(opt.value(), 2.0/(d+2)));
+  return Rcpp::List::create(
+      Rcpp::Named("mu") = tan01(opt.par()),
+      Rcpp::Named("umax") = pow(opt.value(), 2.0 / (d + 2)));
 }
-
 
 // [[Rcpp::export]]
 double get_vmin_i(const arma::mat& P,
                   const arma::vec& b,
                   const size_t i,
                   const arma::vec& mu) {
-  xF2 optimand;
+  xF optimand;
   optimand.P = P;
   optimand.b = b;
   optimand.j = i;
   optimand.mu = mu;
-  Roptim<xF2> opt("L-BFGS-B");
+  Roptim<xF> opt("L-BFGS-B");
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   // opt.control.fnscale = 1.0;  // minimize
@@ -224,12 +205,12 @@ double get_vmax_i(const arma::mat& P,
                   const arma::vec& b,
                   const size_t i,
                   const arma::vec& mu) {
-  xF2 optimand;
+  xF optimand;
   optimand.P = P;
   optimand.b = b;
   optimand.j = i;
   optimand.mu = mu;
-  Roptim<xF2> opt("L-BFGS-B");
+  Roptim<xF> opt("L-BFGS-B");
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
@@ -264,8 +245,7 @@ arma::vec get_vmax(const arma::mat& P,
 }
 
 // [[Rcpp::export]]
-Rcpp::List get_bounds(const arma::mat& P,
-                      const arma::vec& b) {
+Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b) {
   Rcpp::List L = get_umax(P, b);
   arma::vec mu = L["mu"];
   double umax = L["umax"];
@@ -283,9 +263,7 @@ std::default_random_engine generator;
 std::uniform_real_distribution<double> runif(0.0, 1.0);
 
 // [[Rcpp::export]]
-arma::mat rcd(const size_t n,
-              const arma::mat& P,
-              const arma::vec& b) {
+arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b) {
   //, const size_t seed){
   //  std::default_random_engine generator(seed);
   //  std::uniform_real_distribution<double> runif(0.0, 1.0);
@@ -304,7 +282,7 @@ arma::mat rcd(const size_t n,
       v.at(i) = vmin.at(i) + (vmax.at(i) - vmin.at(i)) * runif(generator);
     }
     const arma::vec x = v / sqrt(u) + mu;
-    if(powint(u, d+2) < powint(forig(x, P, b), 2)) {
+    if(powint(u, d + 2) < powint(forig(x, P, b), 2)) {
       tout.col(k) = x;
       k++;
     }
