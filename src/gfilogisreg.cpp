@@ -296,18 +296,18 @@ const double MachineEps = std::numeric_limits<double>::epsilon();
 
 double rtlogis1(double x) {
   double b = plogis(x);
-  if(b <= MachineEps) {
-    Rcpp::Rcout << "b <= MachineEps\n";
+  if(b == 0.0) {
+    Rcpp::Rcout << "b = 0\n";
     return x;
   }
-  double u = R::runif(MachineEps, b);
+  double u = R::runif(0.0, b);
   return qlogis(u);
 }
 
 double rtlogis2(const double x) {
   double a = plogis(x);
-  if(a == 1) {
-    Rcpp::Rcout << "a==1\n";
+  if(a == 1.0) {
+    Rcpp::Rcout << "a = 1\n";
     return x;
   }
   double u = R::runif(a, 1.0);
