@@ -31,12 +31,11 @@ gfilogisreg <- function(
 ){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))
-  signs <- -2*y + 1
+  #signs <- -2*y + 1
   X <- model.matrix(formula, data = data)
   n <- length(y)
   p <- ncol(X)
   stopifnot(p >= 2)
-  grid <- t(as.matrix(expand.grid(rep(list(c(0.01, 0.5, 0.99)), p))))
   idx <- 3L:(2L+p)
   Beta <- matrix(NA_real_, nrow = N, ncol = p)
   colnames(Beta) <- colnames(X)

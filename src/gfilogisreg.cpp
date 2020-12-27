@@ -128,7 +128,7 @@ Rcpp::List get_umax(const arma::mat& P,
   opt.control.fnscale = -1.0;  // maximize
   opt.control.factr = ufactr;
   //  opt.control.pgtol = 1.0e-10;
-  opt.control.lmm = 100;
+  opt.control.lmm = 10;
   opt.set_hessian(false);
   arma::vec lwr = arma::zeros(d) + Epsilon;
   arma::vec upr = arma::ones(d) - Epsilon;
@@ -160,7 +160,7 @@ double get_vmin_i(const arma::mat& P,
   opt.control.maxit = 10000;
   // opt.control.fnscale = 1.0;  // minimize
   opt.control.factr = vfactr;
-  opt.control.lmm = 100;
+  opt.control.lmm = 20;
   opt.set_hessian(false);
   const size_t d = P.n_cols;
   arma::vec init = 0.5 * arma::ones(d);
@@ -175,7 +175,6 @@ double get_vmin_i(const arma::mat& P,
     Rcpp::Rcout << "-- vmin -----------------------" << std::endl;
     opt.print();
   }
-  // Rcpp::Rcout << "-------------------------" << std::endl;
   return opt.value();
 }
 
@@ -207,7 +206,7 @@ double get_vmax_i(const arma::mat& P,
   opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
   opt.control.factr = vfactr;
-  opt.control.lmm = 100;
+  opt.control.lmm = 20;
   opt.set_hessian(false);
   const size_t d = P.n_cols;
   arma::vec init = 0.5 * arma::ones(d);
