@@ -26,7 +26,8 @@
 #' glm(y ~ x, family = binomial())
 gfilogisreg <- function(
   formula, data = NULL, N, thresh = N/2, progress = TRUE,
-  gmp = TRUE, ufactr = 1e8, vfactr = 1e6
+  gmp = TRUE,
+  ufactr = .Machine$double.eps^(-0.5), vfactr = .Machine$double.eps^(-0.38)
 ){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))
