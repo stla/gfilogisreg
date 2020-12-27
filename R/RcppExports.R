@@ -5,8 +5,8 @@ xf2 <- function(u, P, b, mu, j) {
     invisible(.Call('_gfilogisreg_xf2', PACKAGE = 'gfilogisreg', u, P, b, mu, j))
 }
 
-get_umax <- function(P, b) {
-    .Call('_gfilogisreg_get_umax', PACKAGE = 'gfilogisreg', P, b)
+get_umax <- function(P, b, init) {
+    .Call('_gfilogisreg_get_umax', PACKAGE = 'gfilogisreg', P, b, init)
 }
 
 get_vmin_i <- function(P, b, i, mu) {
@@ -21,12 +21,12 @@ get_vmax <- function(P, b, mu) {
     .Call('_gfilogisreg_get_vmax', PACKAGE = 'gfilogisreg', P, b, mu)
 }
 
-get_bounds <- function(P, b) {
-    .Call('_gfilogisreg_get_bounds', PACKAGE = 'gfilogisreg', P, b)
+get_bounds <- function(P, b, init) {
+    .Call('_gfilogisreg_get_bounds', PACKAGE = 'gfilogisreg', P, b, init)
 }
 
-rcd <- function(n, P, b) {
-    .Call('_gfilogisreg_rcd', PACKAGE = 'gfilogisreg', n, P, b)
+rcd <- function(n, P, b, init) {
+    .Call('_gfilogisreg_rcd', PACKAGE = 'gfilogisreg', n, P, b, init)
 }
 
 loop1 <- function(H, Points, y, Xt) {

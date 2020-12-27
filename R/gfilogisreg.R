@@ -87,8 +87,9 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
     # pbreaks <- cumsum(c(1L, vapply(Points, nrow, integer(1L)))) - 1L
     # #Points <- do.call(rbind, Points)
     # hbreaks <- cumsum(c(1L, vapply(H, nrow, integer(1L)))) - 1L
-    L <- loop1(H, Points, yK[t], Xt)
     # L <- loop1(do.call(rbind, H), hbreaks, Points, pbreaks, yK[t], Xt)
+
+    L <- loop1(H, Points, yK[t], Xt)
     H <- L[["H"]]
     At[p+t, ] <- L[["At"]]
     weight[t, ] <- L[["weight"]]
@@ -142,7 +143,7 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
             # assign("B", B, envir = .GlobalEnv)
             # #
             # stop()
-            BTILDES <- rcd(ncopies-1L, P, b, grid)#rcd(ncopies-1L, P, b, B)
+            BTILDES <- rcd(ncopies-1L, P, b, rep(0.5,p))#grid)#rcd(ncopies-1L, P, b, B)
             points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
             rays <- VT[!isone(VT[, 2L]), idx, drop = FALSE]
             for(j in 2L:ncopies){

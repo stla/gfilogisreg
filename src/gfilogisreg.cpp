@@ -1,5 +1,6 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/cos_pi.hpp>
+#include <boost/math/special_functions/sin_pi.hpp>
 #include <boost/multiprecision/gmp.hpp>
 #include "RcppArmadillo.h"
 #include "roptim.h"
@@ -10,7 +11,14 @@ namespace mp = boost::multiprecision;
 // [[Rcpp::depends(roptim)]]
 // [[Rcpp::depends(BH)]]
 
+unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+std::default_random_engine generator(seed);
+
 const double pi = boost::math::constants::pi<double>();
+
+const double Epsilon = pow(std::numeric_limits<double>::epsilon(), 0.5);
+
+const double Factor = 1.0e8;
 
 double powint(double base, size_t exp) {
   double result = 1.0;
@@ -24,30 +32,35 @@ double powint(double base, size_t exp) {
 }
 
 arma::vec tan01(const arma::vec& u) {
-  return arma::tan(pi * (u - 0.5));
+  return arma::log(u / (1.0 - u));  //arma::tan(pi * (u - 0.5)); //
 }
 
 double tan01scalar(double u) {
-  return tan(pi * (u - 0.5));
+  return log(u / (1.0 - u)); //tan(pi * (u - 0.5)); //
 }
 
 double atan01(double x) {
-  return atan(x) / pi + 0.5;
+  return 1.0 / (1.0 + exp(-x));//atan(x) / pi + 0.5;//
 }
 
 double dtan01(double u) {
-  const double x = boost::math::cos_pi(u - 0.5);
-  return pi / (x * x);
+//  const double x = boost::math::cos_pi(u - 0.5);
+//  const double x = cos(pi*(u - 0.5));
+//  return pi / (x * x);
+  return 1.0 / (u * (1.0-u));
 }
 
 arma::vec dlogis(const arma::vec& x) {
-  const arma::vec expx = arma::exp(x);
-  const arma::vec one_plus_expx = 1.0 + expx;
-  return expx /
-         (one_plus_expx % one_plus_expx);  // (1.0 / one_plus_expx) % (1.0 - 1.0
+  const arma::vec expminusx = arma::exp(-x);
+  const arma::vec one_plus_expminusx = 1.0 + expminusx;
+  return expminusx /
+         (one_plus_expminusx % one_plus_expminusx);  // (1.0 / one_plus_expx) % (1.0 - 1.0
                                            // / one_plus_expx);
 }
 
+arma::vec ldlogis(const arma::vec& x) {
+  return -x - 2.0 * arma::log1p(arma::exp(-x));
+}
 arma::vec dldlogis(const arma::vec& x) {
   return 1.0 - 2.0 / (1.0 + arma::exp(-x));
 }
@@ -57,30 +70,41 @@ double forig(const arma::vec& x, const arma::mat& P, const arma::vec& b) {
 }
 
 double f(const arma::vec& u, const arma::mat& P, const arma::vec& b) {
-//  double result = arma::prod(dlogis(P * tan01(u) + b));
-//  return isnormal(result) ? result : 0.0;
-  return arma::prod(dlogis(P * tan01(u) + b));
+  double result = arma::prod(dlogis(P * tan01(u) + b));
+  return isnormal(result) ? result : 0.0;
+//  return arma::prod(dlogis(P * tan01(u) + b));
+}
+
+double logf(const arma::vec& u, const arma::mat& P, const arma::vec& b) {
+  return arma::sum(ldlogis(P * tan01(u) + b));
 }
 
 double df(const double ui,
           const arma::vec& Pi,
           const double y1,
           const arma::vec& y2) {
-  return y1 * dtan01(ui) * arma::sum(Pi % y2);
+//  return y1 * dtan01(ui) * arma::sum(Pi % y2);
+  double result = y1 * dtan01(ui) * arma::sum(Pi % y2);
+  return isnormal(result) ? result : 0.0;
+}
+
+double dlogf(const double ui,
+          const arma::vec& Pi,
+          const arma::vec& y2) {
+  return dtan01(ui) * arma::sum(Pi % y2);
 }
 
 class F : public Functor {
  public:
   arma::mat P;
   arma::vec b;
-  double operator()(const arma::vec& u) override { return f(u, P, b); }
+  double operator()(const arma::vec& u) override { return logf(u, P, b); }
   void Gradient(const arma::vec& u, arma::vec& gr) override {
     const size_t d = P.n_cols;
     gr = arma::zeros<arma::vec>(d);
-    const double y1 = f(u, P, b);
     const arma::vec y2 = dldlogis(P * tan01(u) + b);
     for(size_t i = 0; i < d; i++) {
-      gr(i) = df(u.at(i), P.col(i), y1, y2);
+      gr(i) = dlogf(u.at(i), P.col(i), y2);
     }
   }
 };
@@ -104,6 +128,7 @@ class xF : public Functor {
   size_t j;
   double operator()(const arma::vec& u) override {
     const size_t d = P.n_cols;
+//    return pow(f(u, P, b), 1.0 / (d + 2)) * (tan01scalar(u.at(j)) - mu.at(j));
     const double result = pow(f(u, P, b), 1.0 / (d + 2)) * (tan01scalar(u.at(j)) - mu.at(j));
     return isnormal(result) ? result : 0.0;
   }
@@ -120,17 +145,19 @@ class xF : public Functor {
       const double z = y1alpha * dtan01(u.at(i));
 //      const double dfalpha =
 //          alpha * z * arma::sum(P.col(i) % y2);
+      double result;
       if(i == j) {
-        gr(i) = z * (alpha * arma::sum(P.col(i) % y2) * diff + 1.0);
+        result = z * (alpha * arma::sum(P.col(i) % y2) * diff + 1.0);
       } else {
-        gr(i) = alpha * z * arma::sum(P.col(i) % y2) * diff;
+        result = alpha * z * arma::sum(P.col(i) % y2) * diff;
       }
+      gr(i) = isnormal(result) ? result : 0.0;
     }
   }
 };
 
 // [[Rcpp::export]]
-Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
+Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec init) {
   F optimand;
   optimand.P = P;
   optimand.b = b;
@@ -139,11 +166,12 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
-  opt.control.factr = 1.0;
+  opt.control.factr = Factor;
+//  opt.control.pgtol = 1.0e-10;
+  opt.control.lmm = 100;
   opt.set_hessian(false);
-  arma::vec lwr = arma::zeros(d);
-  arma::vec upr = arma::ones(d);
-  arma::vec init = lwr + 0.5;
+  arma::vec lwr = arma::zeros(d) + Epsilon;
+  arma::vec upr = arma::ones(d) - Epsilon;
   opt.set_lower(lwr);
   opt.set_upper(upr);
   opt.minimize(optimand, init);
@@ -153,7 +181,7 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b) {
   }
   return Rcpp::List::create(
       Rcpp::Named("mu") = tan01(opt.par()),
-      Rcpp::Named("umax") = pow(opt.value(), 2.0 / (d + 2)));
+      Rcpp::Named("umax") = pow(exp(opt.value()), 2.0 / (d + 2)));
 }
 
 // [[Rcpp::export]]
@@ -170,13 +198,14 @@ double get_vmin_i(const arma::mat& P,
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   // opt.control.fnscale = 1.0;  // minimize
-  opt.control.factr = 1.0;
+  opt.control.factr = 1.0e6;
+  opt.control.lmm = 100;
   opt.set_hessian(false);
   const size_t d = P.n_cols;
   arma::vec init = 0.5 * arma::ones(d);
   init.at(i) = atan01(mu.at(i)) / 2.0;
-  arma::vec lwr = arma::zeros(d);
-  arma::vec upr = arma::ones(d);
+  arma::vec lwr = arma::zeros(d) + Epsilon;
+  arma::vec upr = arma::ones(d) - Epsilon;
   upr.at(i) = atan01(mu.at(i));
   opt.set_lower(lwr);
   opt.set_upper(upr);
@@ -214,14 +243,15 @@ double get_vmax_i(const arma::mat& P,
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
-  opt.control.factr = 1.0;
+  opt.control.factr = 1.0e6;
+  opt.control.lmm = 100;
   opt.set_hessian(false);
   const size_t d = P.n_cols;
   arma::vec init = 0.5 * arma::ones(d);
   init.at(i) = (atan01(mu.at(i)) + 1.0) / 2.0;
-  arma::vec lwr = arma::zeros(d);
+  arma::vec lwr = arma::zeros(d) + Epsilon;
   lwr.at(i) = atan01(mu.at(i));
-  arma::vec upr = arma::ones(d);
+  arma::vec upr = arma::ones(d) - Epsilon;
   opt.set_lower(lwr);
   opt.set_upper(upr);
   opt.minimize(optimand, init);
@@ -245,8 +275,8 @@ arma::vec get_vmax(const arma::mat& P,
 }
 
 // [[Rcpp::export]]
-Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b) {
-  Rcpp::List L = get_umax(P, b);
+Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, arma::vec init) {
+  Rcpp::List L = get_umax(P, b, init);
   arma::vec mu = L["mu"];
   double umax = L["umax"];
   arma::vec vmin = get_vmin(P, b, mu);
@@ -259,17 +289,13 @@ Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b) {
 // std::uniform_real_distribution<double> runif(0.0, 1.0);
 // std::default_random_engine generator(seed);
 // runif(generator)
-std::default_random_engine generator;
-std::uniform_real_distribution<double> runif(0.0, 1.0);
 
 // [[Rcpp::export]]
-arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b) {
-  //, const size_t seed){
-  //  std::default_random_engine generator(seed);
-  //  std::uniform_real_distribution<double> runif(0.0, 1.0);
+arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b, arma::vec init) {
+  std::uniform_real_distribution<double> runif(0.0, 1.0);
   const size_t d = P.n_cols;
   arma::mat tout(d, n);
-  const Rcpp::List bounds = get_bounds(P, b);
+  const Rcpp::List bounds = get_bounds(P, b, init);
   const double umax = bounds["umax"];
   const arma::vec mu = bounds["mu"];
   const arma::vec vmin = bounds["vmin"];
@@ -282,7 +308,7 @@ arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b) {
       v.at(i) = vmin.at(i) + (vmax.at(i) - vmin.at(i)) * runif(generator);
     }
     const arma::vec x = v / sqrt(u) + mu;
-    if(powint(u, d + 2) < powint(forig(x, P, b), 2)) {
+    if(u < pow(forig(x, P, b), 2.0/(d+2))) {
       tout.col(k) = x;
       k++;
     }
@@ -304,6 +330,7 @@ double MachineEps = std::numeric_limits<double>::epsilon();
 double rtlogis1(double x, std::default_random_engine gen) {
   double b = plogis(x);
   if(b <= MachineEps) {
+    Rcpp::Rcout << "b <= MachineEps\n";
     return x;
   }
   std::uniform_real_distribution<double> ru(MachineEps, b);
@@ -313,6 +340,7 @@ double rtlogis1(double x, std::default_random_engine gen) {
 double rtlogis2(double x, std::default_random_engine gen) {
   double a = plogis(x);
   if(a == 1) {
+    Rcpp::Rcout << "a==1\n";
     return x;
   }
   std::uniform_real_distribution<double> ru(a, 1);
@@ -437,7 +465,6 @@ Rcpp::List loop1(Rcpp::List H,
   //  std::default_random_engine gen(seed + (t + 1) * 2000000);
   //  generators[t] = gen;
   //}
-  std::default_random_engine gnrtr;
   const size_t N = H.size();
   Rcpp::NumericVector weight(N);
   Rcpp::NumericVector At(N);
@@ -445,7 +472,7 @@ Rcpp::List loop1(Rcpp::List H,
     for(auto i = 0; i < N; i++) {
       arma::mat points = Points[i];
       double MIN = arma::min(points * Xt);
-      double atilde = rtlogis2(MIN, gnrtr);
+      double atilde = rtlogis2(MIN, generator);
       At(i) = atilde;
       weight(i) = 1.0 - plogis(MIN);
       H[i] = addHin(H[i], Xt, atilde, true);
@@ -454,7 +481,7 @@ Rcpp::List loop1(Rcpp::List H,
     for(auto i = 0; i < N; i++) {
       arma::mat points = Points[i];
       double MAX = arma::max(points * Xt);
-      double atilde = rtlogis1(MAX, gnrtr);
+      double atilde = rtlogis1(MAX, generator);
       At(i) = atilde;
       weight(i) = plogis(MAX);
       H[i] = addHin(H[i], Xt, atilde, false);

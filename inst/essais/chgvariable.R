@@ -10,8 +10,8 @@ g <- function(x) atan(x)/pi + 0.5#x/(1+x)
 h <- function(u) tan(pi*(u-0.5))#   u/(1-u)
 g(h(0.3))
 dh <- function(u) pi/cos(pi*(u-0.5))^2
-# h <- function(u) log(u/(1-u))
-# dh <- function(u) 1/(u*(1-u))
+h <- function(u) log(u/(1-u))
+dh <- function(u) 1/(u*(1-u))
 
 f <- function(uv){
   vecx <- P %*% h(uv) + b
@@ -26,7 +26,7 @@ dat <- expand.grid(
   x = seq(0.01,0.99,length.out=50),
   y = seq(0.01,0.99,length.out=50)
 )
-dat$z <- apply(dat, 1, logf)
+dat$z <- apply(dat, 1, f)
 graph3d(dat, z = ~z, keepAspectRatio = FALSE, verticalRatio = 1)
 f(c(1-2e-16, 1-2e-16))
 

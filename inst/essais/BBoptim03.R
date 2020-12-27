@@ -1,3 +1,6 @@
+library(BB)
+library(rgenoud)
+
 P <- structure(c(-0.816496580927726, -0.408248290463863, 0, 0.408248290463863,
                  -0.182574185835055, -0.365148371670111, -0.547722557505166, -0.730296743340222
 ), .Dim = c(4L, 2L))
@@ -15,6 +18,41 @@ dh <- function(u) pi/cos(pi*(u-0.5))^2
 ldlogis <- function(x) x - 2*log1p(exp(x))
 expit <- function(x) 1 / (1+exp(-x))
 dldlogis <- function(x) 1 - 2*expit(x)
+
+forig <- function(xy){
+  vecx <- P %*% xy + b
+  prod(dlogis(vecx))
+}
+grforig_i <- function(xy, i){
+  vecx <- P %*% xy + b
+  prod(dlogis(vecx)) * sum(P[, i] * dldlogis(vecx))
+}
+grforig <- function(xy){
+  vapply(1L:d, function(i) grforig_i(xy, i), numeric(1L))
+}
+
+bnds <- gfilogisreg:::get_bounds(P, b, c(0.5,0.5))
+
+library(Runuran)
+unuran.details(
+  unuran.new(
+    distr = unuran.cmv.new(dim=2, pdf=forig, mode=bnds$mu),
+    method="vnrou; r=0.5"
+  )
+)
+
+sims1 <- ur(
+  unuran.new(
+    distr = unuran.cmv.new(dim=2, pdf=forig, mode=bnds$mu),
+    method="vnrou; r=0.5"
+  ),
+  n = 2000
+)
+sims2 <- gfilogisreg:::rcd(2000, P, b, c(0.5,0.5))
+plot(sims1[,1],sims1[,2])
+points(sims2[,1],sims2[,2],col="red")
+
+
 
 f <- function(uv){
   vecx <- P %*% h(uv) + b
@@ -54,6 +92,14 @@ grxf <- function(uv, mu, j){
 }
 
 # umax ####
+BBoptim(
+  par = rep(0.5, d),
+  fn = f,
+  gr = grf,
+  lower = rep(0, d),
+  upper = rep(1, d),
+  control = list(maximize = TRUE)
+)
 opt <- optim(
   par = rep(0.5, d),
   fn = f,
@@ -65,6 +111,27 @@ opt <- optim(
 )
 mu <- h(opt[["par"]])
 umax <- opt[["value"]]^(2/(d+2))
+
+
+gnd <- genoud(
+  fn = f, nvars = d, max = TRUE, gr = grf,
+  starting.values = rep(0.5, d),
+  Domains = cbind(rep(0,d), rep(1,d)),
+  boundary.enforcement = 2, solution.tolerance = 1e-8,
+  control = list(factr = 1), gradient.check = FALSE
+)
+gnd$value
+h(gnd$par)
+
+gndo <- genoud(
+  fn = forig, nvars = d, max = TRUE, gr = grforig,
+  starting.values = rep(0, d), solution.tolerance = 1e-8,
+  control = list(factr = 1)
+)
+gndo$value
+gndo$par
+h(gnd$par)
+gndo$value - gnd$value
 
 # vmin i
 i <- 1
@@ -129,3 +196,28 @@ dat <- expand.grid(
 )
 dat$z <- apply(dat, 1, xf)
 graph3d(dat, z = ~z, keepAspectRatio = FALSE, verticalRatio = 1)
+
+
+###############################
+# simulations ####
+library(gfilogisreg)
+ilogit <- function(a) exp(a) / (1+exp(a))
+set.seed(666L)
+n <- 50L
+x <- seq(-3, 3, length.out = n)
+beta <- c(0, 2)
+probs <- ilogit(model.matrix(~x) %*% beta)
+y <- rbinom(n, size = 1L, prob = probs)
+gf <- gfilogisreg(y ~ x, N = 3000L)
+gfiSummary(gf, conf = 0.9)
+
+glm(y~x, family = binomial())
+
+# stan ####
+library(rstanarm)
+options(mc.cores = parallel::detectCores())
+
+bglm <- stan_glm(y ~ x, family = binomial(), data = data.frame(y=y, x=x),
+                 iter = 10000)
+
+posterior_interval(bglm)
