@@ -6,36 +6,23 @@
 
 using namespace Rcpp;
 
-// xf2
-void xf2(arma::vec& u, arma::mat& P, arma::vec& b, arma::vec& mu, size_t j);
-RcppExport SEXP _gfilogisreg_xf2(SEXP uSEXP, SEXP PSEXP, SEXP bSEXP, SEXP muSEXP, SEXP jSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec& >::type u(uSEXP);
-    Rcpp::traits::input_parameter< arma::mat& >::type P(PSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< size_t >::type j(jSEXP);
-    xf2(u, P, b, mu, j);
-    return R_NilValue;
-END_RCPP
-}
 // get_umax
-Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec init);
-RcppExport SEXP _gfilogisreg_get_umax(SEXP PSEXP, SEXP bSEXP, SEXP initSEXP) {
+Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec& init, const double ufactr);
+RcppExport SEXP _gfilogisreg_get_umax(SEXP PSEXP, SEXP bSEXP, SEXP initSEXP, SEXP ufactrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type init(initSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_umax(P, b, init));
+    Rcpp::traits::input_parameter< arma::vec& >::type init(initSEXP);
+    Rcpp::traits::input_parameter< const double >::type ufactr(ufactrSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_umax(P, b, init, ufactr));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_vmin_i
-double get_vmin_i(const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu);
-RcppExport SEXP _gfilogisreg_get_vmin_i(SEXP PSEXP, SEXP bSEXP, SEXP iSEXP, SEXP muSEXP) {
+double get_vmin_i(const arma::mat& P, const arma::vec& b, const size_t i, const arma::vec& mu, const double vfactr);
+RcppExport SEXP _gfilogisreg_get_vmin_i(SEXP PSEXP, SEXP bSEXP, SEXP iSEXP, SEXP muSEXP, SEXP vfactrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -43,60 +30,67 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
     Rcpp::traits::input_parameter< const size_t >::type i(iSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_vmin_i(P, b, i, mu));
+    Rcpp::traits::input_parameter< const double >::type vfactr(vfactrSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_vmin_i(P, b, i, mu, vfactr));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_vmin
-arma::vec get_vmin(const arma::mat& P, const arma::vec& b, const arma::vec& mu);
-RcppExport SEXP _gfilogisreg_get_vmin(SEXP PSEXP, SEXP bSEXP, SEXP muSEXP) {
+arma::vec get_vmin(const arma::mat& P, const arma::vec& b, const arma::vec& mu, const double vfactr);
+RcppExport SEXP _gfilogisreg_get_vmin(SEXP PSEXP, SEXP bSEXP, SEXP muSEXP, SEXP vfactrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_vmin(P, b, mu));
+    Rcpp::traits::input_parameter< const double >::type vfactr(vfactrSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_vmin(P, b, mu, vfactr));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_vmax
-arma::vec get_vmax(const arma::mat& P, const arma::vec& b, const arma::vec& mu);
-RcppExport SEXP _gfilogisreg_get_vmax(SEXP PSEXP, SEXP bSEXP, SEXP muSEXP) {
+arma::vec get_vmax(const arma::mat& P, const arma::vec& b, const arma::vec& mu, const double vfactr);
+RcppExport SEXP _gfilogisreg_get_vmax(SEXP PSEXP, SEXP bSEXP, SEXP muSEXP, SEXP vfactrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type mu(muSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_vmax(P, b, mu));
+    Rcpp::traits::input_parameter< const double >::type vfactr(vfactrSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_vmax(P, b, mu, vfactr));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_bounds
-Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, arma::vec init);
-RcppExport SEXP _gfilogisreg_get_bounds(SEXP PSEXP, SEXP bSEXP, SEXP initSEXP) {
+Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, arma::vec& init, const double ufactr, const double vfactr);
+RcppExport SEXP _gfilogisreg_get_bounds(SEXP PSEXP, SEXP bSEXP, SEXP initSEXP, SEXP ufactrSEXP, SEXP vfactrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type init(initSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_bounds(P, b, init));
+    Rcpp::traits::input_parameter< arma::vec& >::type init(initSEXP);
+    Rcpp::traits::input_parameter< const double >::type ufactr(ufactrSEXP);
+    Rcpp::traits::input_parameter< const double >::type vfactr(vfactrSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_bounds(P, b, init, ufactr, vfactr));
     return rcpp_result_gen;
 END_RCPP
 }
 // rcd
-arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b, arma::vec init);
-RcppExport SEXP _gfilogisreg_rcd(SEXP nSEXP, SEXP PSEXP, SEXP bSEXP, SEXP initSEXP) {
+arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b, arma::vec& init, const double ufactr, const double vfactr);
+RcppExport SEXP _gfilogisreg_rcd(SEXP nSEXP, SEXP PSEXP, SEXP bSEXP, SEXP initSEXP, SEXP ufactrSEXP, SEXP vfactrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const size_t >::type n(nSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type P(PSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type b(bSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type init(initSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcd(n, P, b, init));
+    Rcpp::traits::input_parameter< arma::vec& >::type init(initSEXP);
+    Rcpp::traits::input_parameter< const double >::type ufactr(ufactrSEXP);
+    Rcpp::traits::input_parameter< const double >::type vfactr(vfactrSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcd(n, P, b, init, ufactr, vfactr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -116,13 +110,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gfilogisreg_xf2", (DL_FUNC) &_gfilogisreg_xf2, 5},
-    {"_gfilogisreg_get_umax", (DL_FUNC) &_gfilogisreg_get_umax, 3},
-    {"_gfilogisreg_get_vmin_i", (DL_FUNC) &_gfilogisreg_get_vmin_i, 4},
-    {"_gfilogisreg_get_vmin", (DL_FUNC) &_gfilogisreg_get_vmin, 3},
-    {"_gfilogisreg_get_vmax", (DL_FUNC) &_gfilogisreg_get_vmax, 3},
-    {"_gfilogisreg_get_bounds", (DL_FUNC) &_gfilogisreg_get_bounds, 3},
-    {"_gfilogisreg_rcd", (DL_FUNC) &_gfilogisreg_rcd, 4},
+    {"_gfilogisreg_get_umax", (DL_FUNC) &_gfilogisreg_get_umax, 4},
+    {"_gfilogisreg_get_vmin_i", (DL_FUNC) &_gfilogisreg_get_vmin_i, 5},
+    {"_gfilogisreg_get_vmin", (DL_FUNC) &_gfilogisreg_get_vmin, 4},
+    {"_gfilogisreg_get_vmax", (DL_FUNC) &_gfilogisreg_get_vmax, 4},
+    {"_gfilogisreg_get_bounds", (DL_FUNC) &_gfilogisreg_get_bounds, 5},
+    {"_gfilogisreg_rcd", (DL_FUNC) &_gfilogisreg_rcd, 6},
     {"_gfilogisreg_loop1", (DL_FUNC) &_gfilogisreg_loop1, 4},
     {NULL, NULL, 0}
 };
