@@ -24,7 +24,10 @@
 #' gf <- gfilogisreg(y ~ x, N = 400) # (N=400 is not serious)
 #' gfiSummary(gf)
 #' glm(y ~ x, family = binomial())
-gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
+gfilogisreg <- function(
+  formula, data = NULL, N, thresh = N/2, progress = TRUE,
+  gmp = TRUE, ufactr = 1e8, vfactr = 1e6
+){
   y <- f_eval_lhs(formula, data = data)
   stopifnot(all(y %in% c(0,1)))
   signs <- -2*y + 1
@@ -143,7 +146,8 @@ gfilogisreg <- function(formula, data = NULL, N, thresh = N/2, progress = TRUE){
             # assign("B", B, envir = .GlobalEnv)
             # #
             # stop()
-            BTILDES <- rcd(ncopies-1L, P, b, rep(0.5,p))#grid)#rcd(ncopies-1L, P, b, B)
+            BTILDES <- rcd(ncopies-1L, P, b, rep(0.5,p),
+                           ufactr = ufactr, vfactr = vfactr)
             points <- VT[isone(VT[, 2L]), idx, drop = FALSE]
             rays <- VT[!isone(VT[, 2L]), idx, drop = FALSE]
             for(j in 2L:ncopies){

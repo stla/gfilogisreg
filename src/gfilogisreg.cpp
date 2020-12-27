@@ -10,8 +10,6 @@ namespace mp = boost::multiprecision;
 
 const double Epsilon = pow(std::numeric_limits<double>::epsilon(), 0.5);
 
-const double Factor = 1.0e8;
-
 arma::vec from01(const arma::vec& u) {
   return arma::log(u / (1.0 - u));
 }
@@ -116,7 +114,7 @@ class xF : public Functor {
 };
 
 // [[Rcpp::export]]
-Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec& init) {
+Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec& init, const double ufactr) {
   F optimand;
   optimand.P = P;
   optimand.b = b;
@@ -125,7 +123,7 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec& init) {
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
-  opt.control.factr = Factor;
+  opt.control.factr = ufactr;
   //  opt.control.pgtol = 1.0e-10;
   opt.control.lmm = 100;
   opt.set_hessian(false);
@@ -147,7 +145,8 @@ Rcpp::List get_umax(const arma::mat& P, const arma::vec& b, arma::vec& init) {
 double get_vmin_i(const arma::mat& P,
                   const arma::vec& b,
                   const size_t i,
-                  const arma::vec& mu) {
+                  const arma::vec& mu,
+                  const double vfactr) {
   xF optimand;
   optimand.P = P;
   optimand.b = b;
@@ -157,7 +156,7 @@ double get_vmin_i(const arma::mat& P,
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   // opt.control.fnscale = 1.0;  // minimize
-  opt.control.factr = 1.0e6;
+  opt.control.factr = vfactr;
   opt.control.lmm = 100;
   opt.set_hessian(false);
   const size_t d = P.n_cols;
@@ -180,11 +179,12 @@ double get_vmin_i(const arma::mat& P,
 // [[Rcpp::export]]
 arma::vec get_vmin(const arma::mat& P,
                    const arma::vec& b,
-                   const arma::vec& mu) {
+                   const arma::vec& mu,
+                   const double vfactr) {
   const size_t d = P.n_cols;
   arma::vec vmin(d);
   for(size_t i = 0; i < d; i++) {
-    vmin.at(i) = get_vmin_i(P, b, i, mu);
+    vmin.at(i) = get_vmin_i(P, b, i, mu, vfactr);
   }
   return vmin;
 }
@@ -192,7 +192,8 @@ arma::vec get_vmin(const arma::mat& P,
 double get_vmax_i(const arma::mat& P,
                   const arma::vec& b,
                   const size_t i,
-                  const arma::vec& mu) {
+                  const arma::vec& mu,
+                  const double vfactr) {
   xF optimand;
   optimand.P = P;
   optimand.b = b;
@@ -202,7 +203,7 @@ double get_vmax_i(const arma::mat& P,
   opt.control.trace = 0;
   opt.control.maxit = 10000;
   opt.control.fnscale = -1.0;  // maximize
-  opt.control.factr = 1.0e6;
+  opt.control.factr = vfactr;
   opt.control.lmm = 100;
   opt.set_hessian(false);
   const size_t d = P.n_cols;
@@ -224,22 +225,23 @@ double get_vmax_i(const arma::mat& P,
 // [[Rcpp::export]]
 arma::vec get_vmax(const arma::mat& P,
                    const arma::vec& b,
-                   const arma::vec& mu) {
+                   const arma::vec& mu,
+                   const double vfactr) {
   const size_t d = P.n_cols;
   arma::vec vmax(d);
   for(size_t i = 0; i < d; i++) {
-    vmax.at(i) = get_vmax_i(P, b, i, mu);
+    vmax.at(i) = get_vmax_i(P, b, i, mu, vfactr);
   }
   return vmax;
 }
 
 // [[Rcpp::export]]
-Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, arma::vec& init) {
-  const Rcpp::List L = get_umax(P, b, init);
+Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, arma::vec& init, const double ufactr, const double vfactr) {
+  const Rcpp::List L = get_umax(P, b, init, ufactr);
   const arma::vec mu = L["mu"];
   const double umax = L["umax"];
-  const arma::vec vmin = get_vmin(P, b, mu);
-  const arma::vec vmax = get_vmax(P, b, mu);
+  const arma::vec vmin = get_vmin(P, b, mu, vfactr);
+  const arma::vec vmax = get_vmax(P, b, mu, vfactr);
   return Rcpp::List::create(Rcpp::Named("umax") = umax, Rcpp::Named("mu") = mu,
                             Rcpp::Named("vmin") = vmin,
                             Rcpp::Named("vmax") = vmax);
@@ -249,10 +251,11 @@ Rcpp::List get_bounds(const arma::mat& P, const arma::vec& b, arma::vec& init) {
 arma::mat rcd(const size_t n,
               const arma::mat& P,
               const arma::vec& b,
-              arma::vec& init) {
+              arma::vec& init,
+              const double ufactr, const double vfactr) {
   const size_t d = P.n_cols;
   arma::mat tOut(d, n);
-  const Rcpp::List bounds = get_bounds(P, b, init);
+  const Rcpp::List bounds = get_bounds(P, b, init, ufactr, vfactr);
   const double umax = bounds["umax"];
   const arma::vec mu = bounds["mu"];
   const arma::vec vmin = bounds["vmin"];
