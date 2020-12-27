@@ -302,10 +302,10 @@ arma::mat rcd(const size_t n, const arma::mat& P, const arma::vec& b, arma::vec 
   const arma::vec vmax = bounds["vmax"];
   size_t k = 0;
   while(k < n) {
-    const double u = R::runif(0.0, umax);
+    const double u = umax * runif(generator);
     arma::vec v(d);
     for(size_t i = 0; i < d; i++) {
-      v.at(i) = R::runif(vmin.at(i), vmax.at(i));//vmin.at(i) + (vmax.at(i) - vmin.at(i)) * runif(generator);
+      v.at(i) = vmin.at(i) + (vmax.at(i) - vmin.at(i)) * runif(generator);
     }
     const arma::vec x = v / sqrt(u) + mu;
     if(u < pow(forig(x, P, b), 2.0/(d+2))) {
@@ -333,9 +333,8 @@ double rtlogis1(double x, std::default_random_engine gen) {
     Rcpp::Rcout << "b <= MachineEps\n";
     return x;
   }
-  double u = R::runif(MachineEps, b);
-  //std::uniform_real_distribution<double> ru(MachineEps, b);
-  return qlogis(u); //qlogis(ru(gen));
+  std::uniform_real_distribution<double> ru(MachineEps, b);
+  return qlogis(ru(gen));
 }
 
 double rtlogis2(double x, std::default_random_engine gen) {
@@ -344,9 +343,8 @@ double rtlogis2(double x, std::default_random_engine gen) {
     Rcpp::Rcout << "a==1\n";
     return x;
   }
-  double u = R::runif(a, 1.0);
-  //std::uniform_real_distribution<double> ru(a, 1);
-  return qlogis(u);//qlogis(ru(gen));
+  std::uniform_real_distribution<double> ru(a, 1);
+  return qlogis(ru(gen));
 }
 
 std::string scalar2q(double x) {

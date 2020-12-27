@@ -101,12 +101,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // loop1
-Rcpp::List loop1(Rcpp::List H, const Rcpp::List Points, const int y, const arma::colvec& Xt);
+Rcpp::List loop1(const Rcpp::List H, const Rcpp::List Points, const int y, const arma::colvec& Xt);
 RcppExport SEXP _gfilogisreg_loop1(SEXP HSEXP, SEXP PointsSEXP, SEXP ySEXP, SEXP XtSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::List >::type H(HSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List >::type H(HSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List >::type Points(PointsSEXP);
     Rcpp::traits::input_parameter< const int >::type y(ySEXP);
     Rcpp::traits::input_parameter< const arma::colvec& >::type Xt(XtSEXP);
