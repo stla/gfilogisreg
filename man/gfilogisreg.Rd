@@ -4,7 +4,16 @@
 \alias{gfilogisreg}
 \title{Generalized fiducial inference for logistic regression}
 \usage{
-gfilogisreg(formula, data = NULL, N, thresh = N/2, progress = TRUE)
+gfilogisreg(
+  formula,
+  data = NULL,
+  N,
+  thresh = N/2,
+  progress = TRUE,
+  gmp = FALSE,
+  ufactr = .Machine$double.eps^(-0.5),
+  vfactr = .Machine$double.eps^(-0.38)
+)
 }
 \arguments{
 \item{formula}{formula describing the model}
@@ -17,6 +26,12 @@ gfilogisreg(formula, data = NULL, N, thresh = N/2, progress = TRUE)
 
 \item{progress}{whether to print messages showing the progress of the
 algorithm}
+
+\item{gmp}{whether to use exact arithmetic in the algorithm (experimental)}
+
+\item{ufactr, vfactr}{these are control parameters of an optimization
+performed in the algorithm; these parameters should not be changed except
+if you encounter some messages about convergence issues}
 }
 \value{
 A list with two fields: \code{Beta}, the fiducial simulations of

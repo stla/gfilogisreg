@@ -9,6 +9,10 @@
 #' @param thresh threshold criterion for the alteration; expert usage only
 #' @param progress whether to print messages showing the progress of the
 #'   algorithm
+#' @param gmp whether to use exact arithmetic in the algorithm (experimental)
+#' @param ufactr,vfactr these are control parameters of an optimization
+#'   performed in the algorithm; these parameters should not be changed except
+#'   if you encounter some messages about convergence issues
 #'
 #' @return A list with two fields: \code{Beta}, the fiducial simulations of
 #'   the parameters, and \code{Weights}, their weight.

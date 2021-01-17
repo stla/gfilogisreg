@@ -2,3 +2,4 @@
 ^\.Rproj\.user$
 ^inst/essais$
 ^inst/cpp$
+^cran-comments\.md$
