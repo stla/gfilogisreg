@@ -6,7 +6,7 @@ Authors@R:
            family = "Laurent",
            role = c("aut", "cre"),
            email = "laurent_step@outlook.fr")
-Description: Fiducial framework for the logistic regression model. The fiducial distribution of the parameters of the logistic regression is simulated, allowing to perform statistical inference on any parameter of interest.
+Description: Fiducial framework for the logistic regression model. The fiducial distribution of the parameters of the logistic regression is simulated, allowing to perform statistical inference on any parameter of interest. The algorithm is taken from Jessi Cisewski's PhD thesis.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
