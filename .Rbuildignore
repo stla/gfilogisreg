@@ -3,3 +3,4 @@
 ^inst/essais$
 ^inst/cpp$
 ^cran-comments\.md$
+^CRAN-RELEASE$
