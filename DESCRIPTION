@@ -1,6 +1,6 @@
 Package: gfilogisreg
 Title: Generalized Fiducial Inference for Binary Logistic Regression Models
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     person(given = "Stéphane",
            family = "Laurent",
@@ -15,7 +15,8 @@ SystemRequirements: C++11, gmp
 Imports:
   rcdd,
   lazyeval,
-  spatstat,
+  spatstat (>= 2.0.0),
+  spatstat.geom,
   EigenR,
   stats,
   Rcpp
