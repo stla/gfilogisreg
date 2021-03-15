@@ -1,3 +1,4 @@
+The CRAN check shows an error. It is due to the update of the 'spatstat' package.
 
 
 ## Test environments
@@ -7,6 +8,4 @@
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
-
-* This is a new release.
+OK
