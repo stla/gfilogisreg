@@ -45,7 +45,7 @@ double forig(const arma::vec& x, const arma::mat& P, const arma::vec& b) {
 
 double f(const arma::vec& u, const arma::mat& P, const arma::vec& b) {
   double result = arma::prod(dlogis(P * from01(u) + b));
-  return isnormal(result) ? result : 0.0;
+  return std::isnormal(result) ? result : 0.0;
   //  return arma::prod(dlogis(P * from01(u) + b));
 }
 
@@ -59,7 +59,7 @@ double df(const double ui,
           const arma::vec& y2) {
   //  return y1 * dfrom01(ui) * arma::sum(Pi % y2);
   double result = y1 * dfrom01(ui) * arma::sum(Pi % y2);
-  return isnormal(result) ? result : 0.0;
+  return std::isnormal(result) ? result : 0.0;
 }
 
 double dlogf(const double ui, const arma::vec& Pi, const arma::vec& y2) {
@@ -91,7 +91,7 @@ class xF : public Functor {
     const size_t d = P.n_cols;
     const double result =
         pow(f(u, P, b), 1.0 / (d + 2)) * (from01scalar(u.at(j)) - mu.at(j));
-    return isnormal(result) ? result : 0.0;
+    return std::isnormal(result) ? result : 0.0;
   }
   void Gradient(const arma::vec& u, arma::vec& gr) override {
     const size_t d = P.n_cols;
@@ -108,7 +108,7 @@ class xF : public Functor {
       } else {
         result = alpha * z * arma::sum(P.col(i) % y2) * diff;
       }
-      gr(i) = isnormal(result) ? result : 0.0;
+      gr(i) = std::isnormal(result) ? result : 0.0;
     }
   }
 };
