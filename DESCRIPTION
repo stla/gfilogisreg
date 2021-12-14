@@ -1,6 +1,6 @@
 Package: gfilogisreg
 Title: Generalized Fiducial Inference for Binary Logistic Regression Models
-Version: 1.0.1
+Version: 1.0.2
 Authors@R: 
     person(given = "Stéphane",
            family = "Laurent",

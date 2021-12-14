@@ -1,3 +1,8 @@
+# gfilogisreg 1.0.2
+
+Compliance with the new version of the **BH** package.
+
+
 # gfilogisreg 1.0.1
 
 Updated 'spatstat' package.
