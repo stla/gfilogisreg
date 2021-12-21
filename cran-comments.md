@@ -1,9 +1,9 @@
-The CRAN check shows an error. It is due to the update of the 'spatstat' package.
+Some minor changes for compliance with the new **BH** package.
 
 
 ## Test environments
 
-* Ubuntu 18.04, R 3.6.3
+* Windows 10, R 4.1.2
 * win-builder (devel)
 
 ## R CMD check results
