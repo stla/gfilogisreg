@@ -1,6 +1,6 @@
 Package: gfilogisreg
 Title: Generalized Fiducial Inference for Binary Logistic Regression Models
-Version: 1.0.2
+Version: 1.0.3
 Authors@R: 
     person(given = "Stéphane",
            family = "Laurent",
@@ -10,7 +10,7 @@ Description: Fiducial framework for the logistic regression model. The fiducial 
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.1.1
-SystemRequirements: C++11, gmp
+SystemRequirements: C++17, gmp
 Imports:
   rcdd,
   lazyeval,
