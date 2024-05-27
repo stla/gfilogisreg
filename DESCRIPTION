@@ -15,7 +15,7 @@ Imports:
   rcdd,
   lazyeval,
   spatstat (>= 2.0.0),
-  spatstat.geom,
+  spatstat.univar,
   EigenR,
   stats,
   Rcpp
